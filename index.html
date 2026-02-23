@@ -1,100 +1,853 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Gen 1 RNG Gym Run</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+:root{
+  --bg:#0f0f1a;--bg2:#161629;--bg3:#1e1e35;--border:#3a3a6e;
+  --accent:#f8e71c;--accent2:#e94040;--accent3:#3ddc84;
+  --text:#e8e8ff;--text2:#9898cc;--panel-bg:#161629;
+  --slot-empty:#1a1a2e;--slot-border:#2a2a4e;
+  --win-bar-bg:#0a0a1a;--win-bar-fill:#3ddc84;
+  --pointer:#f8e71c;--log-bg:#0a0a14;
+  --shadow:0 2px 16px #000a;
+  --pf:'Press Start 2P',monospace;--bf:'VT323',monospace;
+}
+[data-theme="light"]{
+  --bg:#e8e8f4;--bg2:#d8d8ec;--bg3:#c8c8dc;--border:#9898cc;
+  --accent:#e87c00;--accent2:#cc1010;--accent3:#1a8a40;
+  --text:#101030;--text2:#404068;--panel-bg:#dcdcf0;
+  --slot-empty:#c8c8dc;--slot-border:#9898cc;
+  --win-bar-bg:#b8b8d0;--win-bar-fill:#1a8a40;
+  --pointer:#e87c00;--log-bg:#d0d0e4;--shadow:0 2px 16px #0004;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--bf);font-size:1.1rem;min-height:100vh;display:flex;flex-direction:column}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg2);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+#title-wrap{display:flex;align-items:center;gap:10px}
+.pixel-ball{font-size:1.5rem;color:var(--accent);animation:blink 2s infinite}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.4}}
+#topbar h1{font-family:var(--pf);font-size:clamp(.45rem,2vw,.7rem);color:var(--accent);text-shadow:2px 2px 0 #000,0 0 16px var(--accent);line-height:1.4}
+#top-controls{display:flex;gap:8px}
+#top-controls button{background:var(--bg3);border:2px solid var(--border);color:var(--text);font-family:var(--pf);font-size:.7rem;padding:6px 10px;cursor:pointer;transition:.15s}
+#top-controls button:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+#phase-banner{background:var(--bg3);border-bottom:2px solid var(--border);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-family:var(--pf);font-size:clamp(.4rem,1.5vw,.55rem)}
+#phase-label{color:var(--accent)}
+#stage-label{color:var(--text2);font-size:.8em}
+#app{display:grid;grid-template-columns:1fr;gap:16px;padding:16px;flex:1}
+@media(min-width:700px){#app{grid-template-columns:360px 1fr}}
+#wheel-section{display:flex;flex-direction:column;align-items:center;gap:12px}
+#wheel-container{position:relative;width:340px;height:340px;max-width:100%}
+#wheel-canvas{width:100%;height:100%;border-radius:50%;box-shadow:0 0 32px #0008,0 0 8px var(--accent)44;display:block}
+#wheel-pointer{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:2rem;color:var(--pointer);text-shadow:0 0 8px var(--pointer),2px 2px 0 #000;pointer-events:none;z-index:10}
+#pointer-label{font-family:var(--pf);font-size:clamp(.55rem,2vw,.72rem);color:var(--accent);text-align:center;min-height:1.8em;letter-spacing:1px;text-shadow:0 0 10px var(--accent)99;transition:color .2s}#wheel-result-label{font-family:var(--pf);font-size:clamp(.5rem,2vw,.65rem);color:var(--accent3);text-align:center;min-height:2em;text-shadow:0 0 8px var(--accent3)88}
+.spin-btn{font-family:var(--pf);font-size:clamp(.6rem,2.5vw,.85rem);padding:14px 36px;background:var(--accent);color:#000;border:3px solid #000;cursor:pointer;box-shadow:4px 4px 0 #000;transition:.1s;letter-spacing:2px}
+.spin-btn:hover:not(:disabled){transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
+.spin-btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
+.spin-btn:disabled{background:var(--text2);cursor:not-allowed;box-shadow:2px 2px 0 #000;color:#666}
+#spin-queue-label{font-family:var(--pf);font-size:.5rem;color:var(--text2);text-align:center;min-height:1.5em}
+.panel{background:var(--panel-bg);border:2px solid var(--border);padding:12px;margin-bottom:12px;box-shadow:var(--shadow)}
+.panel h2{font-family:var(--pf);font-size:clamp(.4rem,1.5vw,.55rem);color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:10px}
+#party-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.party-slot{background:var(--slot-empty);border:2px solid var(--slot-border);padding:8px 4px;text-align:center;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.2s;position:relative}
+.party-slot.empty::after{content:'—';color:var(--slot-border);font-size:1.2rem}
+.party-slot.filled{border-color:var(--accent);background:var(--bg3)}
+.party-slot.filled.bonus{border-color:var(--accent2);border-style:dashed}
+.slot-name{font-family:var(--pf);font-size:.38rem;color:var(--text);line-height:1.5;word-break:break-all}
+.slot-types{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.type-badge{font-family:var(--pf);font-size:.28rem;padding:2px 4px;border-radius:2px;text-transform:uppercase}
+.type-Normal{background:#a8a878;color:#000}.type-Fire{background:#f08030;color:#000}.type-Water{background:#6890f0;color:#fff}
+.type-Electric{background:#f8d030;color:#000}.type-Grass{background:#78c850;color:#000}.type-Ice{background:#98d8d8;color:#000}
+.type-Fighting{background:#c03028;color:#fff}.type-Poison{background:#a040a0;color:#fff}.type-Ground{background:#e0c068;color:#000}
+.type-Flying{background:#a890f0;color:#fff}.type-Psychic{background:#f85888;color:#fff}.type-Bug{background:#a8b820;color:#000}
+.type-Rock{background:#b8a038;color:#000}.type-Ghost{background:#705898;color:#fff}.type-Dragon{background:#7038f8;color:#fff}
+.slot-contrib{font-family:var(--pf);font-size:.3rem;color:var(--accent3)}
+#win-chance-bar-wrap{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#win-chance-bar{flex:1;height:16px;background:var(--win-bar-bg);border:2px solid var(--border);overflow:hidden}
+#win-chance-fill{display:block;height:100%;background:var(--win-bar-fill);width:0%;transition:width .6s ease;box-shadow:0 0 8px var(--accent3)88}
+#win-chance-pct{font-family:var(--pf);font-size:.7rem;color:var(--accent3);min-width:40px}
+#battle-breakdown{font-family:var(--bf);font-size:1rem;line-height:1.5;color:var(--text2)}
+.contrib-row{display:flex;justify-content:space-between;border-bottom:1px dotted var(--border);padding:2px 0}
+.contrib-row span:first-child{color:var(--text)}
+.contrib-vs{color:var(--accent3)}.contrib-bonus{color:var(--accent)}
+#inventory-list{display:flex;flex-direction:column;gap:4px;font-family:var(--bf);font-size:1.1rem}
+.inv-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dotted var(--border);padding:2px 0}
+.inv-count{font-family:var(--pf);font-size:.55rem;color:var(--accent)}
+.inv-permanent{color:var(--accent3);font-size:.85em}
+#stage-info{font-family:var(--bf);font-size:1.15rem;line-height:1.6;color:var(--text2)}
+#stage-info strong{color:var(--text)}
+#log-section{padding:12px 16px;background:var(--log-bg);border-top:2px solid var(--border)}
+#log-section h2{font-family:var(--pf);font-size:.5rem;color:var(--accent);margin-bottom:8px}
+#run-log{max-height:160px;overflow-y:auto;font-family:var(--bf);font-size:1rem;line-height:1.5;color:var(--text2)}
+#run-log::-webkit-scrollbar{width:6px}
+#run-log::-webkit-scrollbar-track{background:var(--bg2)}
+#run-log::-webkit-scrollbar-thumb{background:var(--border)}
+.log-entry{padding:2px 0;border-bottom:1px solid var(--bg3);animation:logIn .3s ease}
+@keyframes logIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.log-icon{margin-right:6px}
+.log-win{color:var(--accent3)}.log-lose{color:var(--accent2)}.log-info{color:var(--text2)}
+.log-capture{color:#80c0ff}.log-item{color:var(--accent)}.log-evolve{color:#c080ff}.log-crit{color:var(--accent2)}
+#overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .4s ease}
+#overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+#overlay-content{background:var(--bg2);border:3px solid var(--accent);padding:32px 40px;text-align:center;box-shadow:8px 8px 0 #000,0 0 40px var(--accent)44;max-width:90vw}
+#overlay-title{font-family:var(--pf);font-size:clamp(.7rem,3vw,1.1rem);color:var(--accent);margin-bottom:16px;text-shadow:2px 2px 0 #000}
+#overlay-msg{font-family:var(--bf);font-size:1.3rem;color:var(--text2);margin-bottom:24px;line-height:1.6}
+#overlay-restart{font-family:var(--pf);font-size:.65rem;padding:12px 28px;background:var(--accent);color:#000;border:3px solid #000;cursor:pointer;box-shadow:4px 4px 0 #000}
+#overlay-restart:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
+  </style>
 </head>
 <body>
-  <!-- TOP BAR -->
-  <header id="topbar">
-    <div id="title-wrap">
-      <span class="pixel-ball">◉</span>
-      <h1>Gen 1 RNG Gym Run</h1>
-    </div>
-    <div id="top-controls">
-      <button id="darkModeToggle" title="Toggle Dark/Light">☾</button>
-      <button id="restartBtn" title="Restart Run">↺</button>
-    </div>
-  </header>
-
-  <!-- PHASE BANNER -->
-  <div id="phase-banner">
-    <span id="phase-label">Starter Selection</span>
-    <span id="stage-label"></span>
+<header id="topbar">
+  <div id="title-wrap"><span class="pixel-ball">◉</span><h1>Gen 1 RNG Gym Run</h1></div>
+  <div id="top-controls">
+    <button id="darkModeToggle" title="Dark/Light">☾</button>
+    <button id="restartBtn" title="Restart">↺</button>
   </div>
-
-  <!-- MAIN LAYOUT -->
-  <main id="app">
-    <!-- LEFT: Wheel + Spin -->
-    <section id="wheel-section">
-      <div id="wheel-container">
-        <canvas id="wheel-canvas" width="340" height="340"></canvas>
-        <div id="wheel-pointer">▼</div>
-      </div>
-      <div id="wheel-result-label"></div>
-      <button id="spinBtn" class="spin-btn">SPIN!</button>
-      <div id="spin-queue-label"></div>
-    </section>
-
-    <!-- RIGHT: Info panels -->
-    <aside id="info-section">
-      <!-- PARTY -->
-      <div class="panel" id="party-panel">
-        <h2>Party</h2>
-        <div id="party-grid">
-          <div class="party-slot empty" id="slot-0"></div>
-          <div class="party-slot empty" id="slot-1"></div>
-          <div class="party-slot empty" id="slot-2"></div>
-          <div class="party-slot empty" id="slot-3"></div>
-          <div class="party-slot empty" id="slot-4"></div>
-          <div class="party-slot empty" id="slot-5"></div>
-        </div>
-      </div>
-
-      <!-- BATTLE PANEL -->
-      <div class="panel" id="battle-panel">
-        <h2>Battle Odds</h2>
-        <div id="win-chance-bar-wrap">
-          <div id="win-chance-bar"><span id="win-chance-fill"></span></div>
-          <span id="win-chance-pct">—%</span>
-        </div>
-        <div id="battle-breakdown"></div>
-      </div>
-
-      <!-- INVENTORY -->
-      <div class="panel" id="inventory-panel">
-        <h2>Bag</h2>
-        <div id="inventory-list"></div>
-      </div>
-
-      <!-- STAGE INFO -->
-      <div class="panel" id="stage-panel">
-        <h2>Next Stage</h2>
-        <div id="stage-info"></div>
-      </div>
-    </aside>
-  </main>
-
-  <!-- RUN LOG -->
-  <section id="log-section">
-    <h2>Run Log</h2>
-    <div id="run-log"></div>
+</header>
+<div id="phase-banner">
+  <span id="phase-label">Starter Selection</span>
+  <span id="stage-label"></span>
+</div>
+<main id="app">
+  <section id="wheel-section">
+    <div id="wheel-container">
+      <canvas id="wheel-canvas" width="340" height="340"></canvas>
+      <div id="wheel-pointer">▼</div>
+    </div>
+    <div id="pointer-label"></div>
+    <div id="wheel-result-label">Loading...</div>
+    <button id="spinBtn" class="spin-btn" disabled>SPIN!</button>
+    <div id="spin-queue-label"></div>
   </section>
-
-  <!-- OVERLAY for end game -->
-  <div id="overlay" class="hidden">
-    <div id="overlay-content">
-      <h2 id="overlay-title"></h2>
-      <p id="overlay-msg"></p>
-      <button id="overlay-restart">New Run</button>
+  <aside id="info-section">
+    <div class="panel" id="party-panel">
+      <h2>Party</h2>
+      <div id="party-grid">
+        <div class="party-slot empty" id="slot-0"></div>
+        <div class="party-slot empty" id="slot-1"></div>
+        <div class="party-slot empty" id="slot-2"></div>
+        <div class="party-slot empty" id="slot-3"></div>
+        <div class="party-slot empty" id="slot-4"></div>
+        <div class="party-slot empty" id="slot-5"></div>
+      </div>
     </div>
+    <div class="panel" id="battle-panel">
+      <h2>Battle Odds</h2>
+      <div id="win-chance-bar-wrap">
+        <div id="win-chance-bar"><span id="win-chance-fill"></span></div>
+        <span id="win-chance-pct">—%</span>
+      </div>
+      <div id="battle-breakdown"></div>
+    </div>
+    <div class="panel" id="inventory-panel">
+      <h2>Bag</h2>
+      <div id="inventory-list"></div>
+    </div>
+    <div class="panel" id="stage-panel">
+      <h2>Next Stage</h2>
+      <div id="stage-info"></div>
+    </div>
+  </aside>
+</main>
+<section id="log-section">
+  <h2>Run Log</h2>
+  <div id="run-log"></div>
+</section>
+<div id="overlay" class="hidden">
+  <div id="overlay-content">
+    <h2 id="overlay-title"></h2>
+    <p id="overlay-msg"></p>
+    <button id="overlay-restart">New Run</button>
   </div>
+</div>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ALL DATA INLINED — NO FETCH, NO SERVER NEEDED
+// ═══════════════════════════════════════════════════════════════
+const POKEDEX = [
+  {"dexNumber":1,"name":"Bulbasaur","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":2},
+  {"dexNumber":2,"name":"Ivysaur","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":3},
+  {"dexNumber":3,"name":"Venusaur","type1":"Grass","type2":"Poison","tier":"Rare","evolvesTo":null},
+  {"dexNumber":4,"name":"Charmander","type1":"Fire","type2":null,"tier":"Common","evolvesTo":5},
+  {"dexNumber":5,"name":"Charmeleon","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":6},
+  {"dexNumber":6,"name":"Charizard","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null},
+  {"dexNumber":7,"name":"Squirtle","type1":"Water","type2":null,"tier":"Common","evolvesTo":8},
+  {"dexNumber":8,"name":"Wartortle","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":9},
+  {"dexNumber":9,"name":"Blastoise","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":10,"name":"Caterpie","type1":"Bug","type2":null,"tier":"Common","evolvesTo":11},
+  {"dexNumber":11,"name":"Metapod","type1":"Bug","type2":null,"tier":"Common","evolvesTo":12},
+  {"dexNumber":12,"name":"Butterfree","type1":"Bug","type2":"Flying","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":13,"name":"Weedle","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":14},
+  {"dexNumber":14,"name":"Kakuna","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":15},
+  {"dexNumber":15,"name":"Beedrill","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":16,"name":"Pidgey","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":17},
+  {"dexNumber":17,"name":"Pidgeotto","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":18},
+  {"dexNumber":18,"name":"Pidgeot","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":19,"name":"Rattata","type1":"Normal","type2":null,"tier":"Common","evolvesTo":20},
+  {"dexNumber":20,"name":"Raticate","type1":"Normal","type2":null,"tier":"Common","evolvesTo":null},
+  {"dexNumber":21,"name":"Spearow","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":22},
+  {"dexNumber":22,"name":"Fearow","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":23,"name":"Ekans","type1":"Poison","type2":null,"tier":"Common","evolvesTo":24},
+  {"dexNumber":24,"name":"Arbok","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":25,"name":"Pikachu","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":26},
+  {"dexNumber":26,"name":"Raichu","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":27,"name":"Sandshrew","type1":"Ground","type2":null,"tier":"Common","evolvesTo":28},
+  {"dexNumber":28,"name":"Sandslash","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":29,"name":"Nidoran-F","type1":"Poison","type2":null,"tier":"Common","evolvesTo":30},
+  {"dexNumber":30,"name":"Nidorina","type1":"Poison","type2":null,"tier":"Common","evolvesTo":31},
+  {"dexNumber":31,"name":"Nidoqueen","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":32,"name":"Nidoran-M","type1":"Poison","type2":null,"tier":"Common","evolvesTo":33},
+  {"dexNumber":33,"name":"Nidorino","type1":"Poison","type2":null,"tier":"Common","evolvesTo":34},
+  {"dexNumber":34,"name":"Nidoking","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":35,"name":"Clefairy","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":36},
+  {"dexNumber":36,"name":"Clefable","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":37,"name":"Vulpix","type1":"Fire","type2":null,"tier":"Common","evolvesTo":38},
+  {"dexNumber":38,"name":"Ninetales","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":39,"name":"Jigglypuff","type1":"Normal","type2":null,"tier":"Common","evolvesTo":40},
+  {"dexNumber":40,"name":"Wigglytuff","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":41,"name":"Zubat","type1":"Poison","type2":"Flying","tier":"Common","evolvesTo":42},
+  {"dexNumber":42,"name":"Golbat","type1":"Poison","type2":"Flying","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":43,"name":"Oddish","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":44},
+  {"dexNumber":44,"name":"Gloom","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":45},
+  {"dexNumber":45,"name":"Vileplume","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":46,"name":"Paras","type1":"Bug","type2":"Grass","tier":"Common","evolvesTo":47},
+  {"dexNumber":47,"name":"Parasect","type1":"Bug","type2":"Grass","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":48,"name":"Venonat","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":49},
+  {"dexNumber":49,"name":"Venomoth","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":50,"name":"Diglett","type1":"Ground","type2":null,"tier":"Common","evolvesTo":51},
+  {"dexNumber":51,"name":"Dugtrio","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":52,"name":"Meowth","type1":"Normal","type2":null,"tier":"Common","evolvesTo":53},
+  {"dexNumber":53,"name":"Persian","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":54,"name":"Psyduck","type1":"Water","type2":null,"tier":"Common","evolvesTo":55},
+  {"dexNumber":55,"name":"Golduck","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":56,"name":"Mankey","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":57},
+  {"dexNumber":57,"name":"Primeape","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":58,"name":"Growlithe","type1":"Fire","type2":null,"tier":"Common","evolvesTo":59},
+  {"dexNumber":59,"name":"Arcanine","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":60,"name":"Poliwag","type1":"Water","type2":null,"tier":"Common","evolvesTo":61},
+  {"dexNumber":61,"name":"Poliwhirl","type1":"Water","type2":null,"tier":"Common","evolvesTo":62},
+  {"dexNumber":62,"name":"Poliwrath","type1":"Water","type2":"Fighting","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":63,"name":"Abra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":64},
+  {"dexNumber":64,"name":"Kadabra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":65},
+  {"dexNumber":65,"name":"Alakazam","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":66,"name":"Machop","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":67},
+  {"dexNumber":67,"name":"Machoke","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":68},
+  {"dexNumber":68,"name":"Machamp","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":69,"name":"Bellsprout","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":70},
+  {"dexNumber":70,"name":"Weepinbell","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":71},
+  {"dexNumber":71,"name":"Victreebel","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":72,"name":"Tentacool","type1":"Water","type2":"Poison","tier":"Common","evolvesTo":73},
+  {"dexNumber":73,"name":"Tentacruel","type1":"Water","type2":"Poison","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":74,"name":"Geodude","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":75},
+  {"dexNumber":75,"name":"Graveler","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":76},
+  {"dexNumber":76,"name":"Golem","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":77,"name":"Ponyta","type1":"Fire","type2":null,"tier":"Common","evolvesTo":78},
+  {"dexNumber":78,"name":"Rapidash","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":79,"name":"Slowpoke","type1":"Water","type2":"Psychic","tier":"Common","evolvesTo":80},
+  {"dexNumber":80,"name":"Slowbro","type1":"Water","type2":"Psychic","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":81,"name":"Magnemite","type1":"Electric","type2":null,"tier":"Common","evolvesTo":82},
+  {"dexNumber":82,"name":"Magneton","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":83,"name":"Farfetch'd","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":84,"name":"Doduo","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":85},
+  {"dexNumber":85,"name":"Dodrio","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":86,"name":"Seel","type1":"Water","type2":null,"tier":"Common","evolvesTo":87},
+  {"dexNumber":87,"name":"Dewgong","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":88,"name":"Grimer","type1":"Poison","type2":null,"tier":"Common","evolvesTo":89},
+  {"dexNumber":89,"name":"Muk","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":90,"name":"Shellder","type1":"Water","type2":null,"tier":"Common","evolvesTo":91},
+  {"dexNumber":91,"name":"Cloyster","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":92,"name":"Gastly","type1":"Ghost","type2":"Poison","tier":"Common","evolvesTo":93},
+  {"dexNumber":93,"name":"Haunter","type1":"Ghost","type2":"Poison","tier":"Uncommon","evolvesTo":94},
+  {"dexNumber":94,"name":"Gengar","type1":"Ghost","type2":"Poison","tier":"Rare","evolvesTo":null},
+  {"dexNumber":95,"name":"Onix","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":96,"name":"Drowzee","type1":"Psychic","type2":null,"tier":"Common","evolvesTo":97},
+  {"dexNumber":97,"name":"Hypno","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":98,"name":"Krabby","type1":"Water","type2":null,"tier":"Common","evolvesTo":99},
+  {"dexNumber":99,"name":"Kingler","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":100,"name":"Voltorb","type1":"Electric","type2":null,"tier":"Common","evolvesTo":101},
+  {"dexNumber":101,"name":"Electrode","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":102,"name":"Exeggcute","type1":"Grass","type2":"Psychic","tier":"Common","evolvesTo":103},
+  {"dexNumber":103,"name":"Exeggutor","type1":"Grass","type2":"Psychic","tier":"Rare","evolvesTo":null},
+  {"dexNumber":104,"name":"Cubone","type1":"Ground","type2":null,"tier":"Common","evolvesTo":105},
+  {"dexNumber":105,"name":"Marowak","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":106,"name":"Hitmonlee","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":107,"name":"Hitmonchan","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":108,"name":"Lickitung","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":109,"name":"Koffing","type1":"Poison","type2":null,"tier":"Common","evolvesTo":110},
+  {"dexNumber":110,"name":"Weezing","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":111,"name":"Rhyhorn","type1":"Ground","type2":"Rock","tier":"Common","evolvesTo":112},
+  {"dexNumber":112,"name":"Rhydon","type1":"Ground","type2":"Rock","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":113,"name":"Chansey","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":114,"name":"Tangela","type1":"Grass","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":115,"name":"Kangaskhan","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":116,"name":"Horsea","type1":"Water","type2":null,"tier":"Common","evolvesTo":117},
+  {"dexNumber":117,"name":"Seadra","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":118,"name":"Goldeen","type1":"Water","type2":null,"tier":"Common","evolvesTo":119},
+  {"dexNumber":119,"name":"Seaking","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":120,"name":"Staryu","type1":"Water","type2":null,"tier":"Common","evolvesTo":121},
+  {"dexNumber":121,"name":"Starmie","type1":"Water","type2":"Psychic","tier":"Rare","evolvesTo":null},
+  {"dexNumber":122,"name":"Mr. Mime","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":123,"name":"Scyther","type1":"Bug","type2":"Flying","tier":"Rare","evolvesTo":null},
+  {"dexNumber":124,"name":"Jynx","type1":"Ice","type2":"Psychic","tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":125,"name":"Electabuzz","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":126,"name":"Magmar","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":127,"name":"Pinsir","type1":"Bug","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":128,"name":"Tauros","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":129,"name":"Magikarp","type1":"Water","type2":null,"tier":"Common","evolvesTo":130},
+  {"dexNumber":130,"name":"Gyarados","type1":"Water","type2":"Flying","tier":"Rare","evolvesTo":null},
+  {"dexNumber":131,"name":"Lapras","type1":"Water","type2":"Ice","tier":"Rare","evolvesTo":null},
+  {"dexNumber":132,"name":"Ditto","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
+  {"dexNumber":133,"name":"Eevee","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":136},
+  {"dexNumber":134,"name":"Vaporeon","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":135,"name":"Jolteon","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":136,"name":"Flareon","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":137,"name":"Porygon","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":138,"name":"Omanyte","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":139},
+  {"dexNumber":139,"name":"Omastar","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null},
+  {"dexNumber":140,"name":"Kabuto","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":141},
+  {"dexNumber":141,"name":"Kabutops","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null},
+  {"dexNumber":142,"name":"Aerodactyl","type1":"Rock","type2":"Flying","tier":"Rare","evolvesTo":null},
+  {"dexNumber":143,"name":"Snorlax","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":144,"name":"Articuno","type1":"Ice","type2":"Flying","tier":"Rare","evolvesTo":null},
+  {"dexNumber":145,"name":"Zapdos","type1":"Electric","type2":"Flying","tier":"Rare","evolvesTo":null},
+  {"dexNumber":146,"name":"Moltres","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null},
+  {"dexNumber":147,"name":"Dratini","type1":"Dragon","type2":null,"tier":"Uncommon","evolvesTo":148},
+  {"dexNumber":148,"name":"Dragonair","type1":"Dragon","type2":null,"tier":"Rare","evolvesTo":149},
+  {"dexNumber":149,"name":"Dragonite","type1":"Dragon","type2":"Flying","tier":"Rare","evolvesTo":null},
+  {"dexNumber":150,"name":"Mewtwo","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null},
+  {"dexNumber":151,"name":"Mew","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null}
+];
+const TYPECHART = {
+  "Normal":    {"Rock":0.5,"Ghost":0},
+  "Fire":      {"Fire":0.5,"Water":0.5,"Grass":2,"Ice":2,"Bug":2,"Rock":0.5,"Dragon":0.5},
+  "Water":     {"Fire":2,"Water":0.5,"Grass":0.5,"Ground":2,"Rock":2,"Dragon":0.5},
+  "Electric":  {"Water":2,"Electric":0.5,"Grass":0.5,"Ground":0,"Flying":2,"Dragon":0.5},
+  "Grass":     {"Fire":0.5,"Water":2,"Grass":0.5,"Poison":0.5,"Ground":2,"Flying":0.5,"Bug":0.5,"Rock":2,"Dragon":0.5},
+  "Ice":       {"Water":0.5,"Grass":2,"Ice":0.5,"Ground":2,"Flying":2,"Dragon":2},
+  "Fighting":  {"Normal":2,"Ice":2,"Poison":0.5,"Flying":0.5,"Psychic":0.5,"Bug":0.5,"Rock":2,"Ghost":0},
+  "Poison":    {"Grass":2,"Poison":0.5,"Ground":0.5,"Bug":2,"Rock":0.5,"Ghost":0.5},
+  "Ground":    {"Fire":2,"Electric":2,"Grass":0.5,"Poison":2,"Flying":0,"Bug":0.5,"Rock":2},
+  "Flying":    {"Electric":0.5,"Grass":2,"Fighting":2,"Bug":2,"Rock":0.5},
+  "Psychic":   {"Fighting":2,"Poison":2,"Psychic":0.5,"Ghost":0},
+  "Bug":       {"Fire":0.5,"Grass":2,"Fighting":0.5,"Flying":0.5,"Psychic":2,"Ghost":0.5,"Poison":2},
+  "Rock":      {"Fire":2,"Ice":2,"Fighting":0.5,"Ground":0.5,"Flying":2,"Bug":2},
+  "Ghost":     {"Normal":0,"Psychic":0,"Ghost":2},
+  "Dragon":    {"Dragon":2}
+};
+const STAGES = [
+  {"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge"},
+  {"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge"},
+  {"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge"},
+  {"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge"},
+  {"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge"},
+  {"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge"},
+  {"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge"},
+  {"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge"},
+  {"id":"e4_1","stageName":"Lorelei — Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null},
+  {"id":"e4_2","stageName":"Bruno — Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null},
+  {"id":"e4_3","stageName":"Agatha — Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null},
+  {"id":"e4_4","stageName":"Lance — Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null},
+  {"id":"champion","stageName":"Blue — Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null}
+];
+const BALANCE = {
+  "intermissionWheel": {
+    "Capture": 30,
+    "DoubleCapture": 10,
+    "GuaranteedRareEncounter": 6,
+    "MysteryPokemon": 9,
+    "EvolvePartyPokemon": 12,
+    "TypeShield": 10,
+    "LuckyCharm": 6,
+    "BonusSlotNextBattle": 7,
+    "FindItem": 10
+  },
+  "captureTierWeights": {
+    "Common": 70,
+    "Uncommon": 25,
+    "Rare": 5
+  },
+  "mysteryTierWeights": {
+    "Common": 55,
+    "Uncommon": 35,
+    "Rare": 10
+  },
+  "captureResultWeights": {
+    "Fail": 30,
+    "Success": 60,
+    "Critical": 10
+  },
+  "criticalBonus": 6,
+  "partyFullWheel": {
+    "ReplaceRandom": 40,
+    "ReplaceWorstMatchup": 40,
+    "DiscardNew": 20
+  },
+  "findItemWheel": {
+    "Potion": 45,
+    "TypeShield": 30,
+    "LuckyCharm": 20,
+    "RunningShoes": 5
+  },
+  "intermissionSpins": {
+    "base": 1,
+    "withRunningShoes": 2
+  },
+  "typeShieldBonus": 8,
+  "bonusSlotContribution": 7,
+  "winModel": {
+    "baseChance": 20,
+    "contributions": {
+      "VeryStrong": 12,
+      "Strong": 10,
+      "Neutral": 5,
+      "Resisted": 2
+    },
+    "clamp": [5, 95]
+  }
+};
 
-  <script src="app.js"></script>
+// ── Data init ──────────────────────────────────────────────────
+const BY_TIER = {Common:[],Uncommon:[],Rare:[]};
+const DEX_MAP = {};
+for(const p of POKEDEX){ BY_TIER[p.tier].push(p); DEX_MAP[p.dexNumber]=p; }
+
+// ── Global state ───────────────────────────────────────────────
+let G={};
+
+function initGame(){
+  G={
+    phase:'STARTER', stageIndex:0, party:[],
+    inventory:{Potion:0,LuckyCharm:0,TypeShield:0,RunningShoes:false},
+    bonuses:{criticalBonus:false,bonusSlot:null},
+    intermissionSpinsLeft:0, runEnded:false
+  };
+  document.getElementById('run-log').innerHTML='';
+  document.getElementById('overlay').classList.add('hidden');
+  drawWheel([],0);
+  renderAll();
+  setupStarterWheel();
+}
+
+// ── Wheel engine ───────────────────────────────────────────────
+const canvas=document.getElementById('wheel-canvas');
+const ctx=canvas.getContext('2d');
+const COLORS_DARK=['#c03060','#e06020','#b8a020','#208050','#2060c0','#803090','#c05050','#2090a0','#a04080','#50a030','#d04030','#3060a0','#a07020','#306090'];
+const COLORS_LIGHT=['#e05080','#e08030','#c09010','#30a060','#4070d0','#a050b0','#d06060','#30a0b0','#b04090','#60b040','#e05040','#4070c0','#c08030','#407090'];
+
+let WS={slices:[],angle:0,spinning:false,startAngle:0,targetAngle:0,startTime:0,duration:0,onDone:null};
+
+function drawWheel(slices,angle){
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=Math.min(W,H)/2-6;
+  ctx.clearRect(0,0,W,H);
+  if(!slices||!slices.length)return;
+  const dark=document.documentElement.getAttribute('data-theme')!=='light';
+  const colors=dark?COLORS_DARK:COLORS_LIGHT;
+  const total=slices.reduce((s,x)=>s+x.weight,0);
+  let start=angle-Math.PI/2;
+  slices.forEach((s,i)=>{
+    const sweep=(s.weight/total)*2*Math.PI;
+    const end=start+sweep;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();
+    ctx.fillStyle=colors[i%colors.length];ctx.fill();
+    ctx.strokeStyle='#000';ctx.lineWidth=1.5;ctx.stroke();
+    if(sweep>0.1){
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(start+sweep/2);
+      ctx.textAlign='right';ctx.textBaseline='middle';
+      ctx.fillStyle=dark?'#fff':'#111';ctx.shadowColor=dark?'#000':'#fff';ctx.shadowBlur=3;
+      let lbl=s.label.length>13?s.label.slice(0,12)+'…':s.label;
+      ctx.font=`bold ${Math.max(8,Math.min(13,sweep*38))}px VT323,monospace`;
+      ctx.fillText(lbl,r*0.65,0);ctx.restore();
+    }
+    start=end;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,18,0,2*Math.PI);
+  ctx.fillStyle='#111';ctx.fill();ctx.strokeStyle='#f8e71c';ctx.lineWidth=2;ctx.stroke();
+}
+
+function easeOut(t){return 1-Math.pow(1-t,3);}
+
+function animSpin(ts){
+  if(!WS.spinning)return;
+  const p=Math.min((ts-WS.startTime)/WS.duration,1);
+  WS.angle=WS.startAngle+(WS.targetAngle-WS.startAngle)*easeOut(p);
+  drawWheel(WS.slices,WS.angle);
+  if(p<1){requestAnimationFrame(animSpin);}
+  else{WS.spinning=false;if(WS.onDone)WS.onDone();}
+}
+
+function spinWheel(slices,cb){
+  if(WS.spinning||!slices||!slices.length)return;
+  const dark=document.documentElement.getAttribute('data-theme')!=='light';
+  const colors=dark?COLORS_DARK:COLORS_LIGHT;
+  WS.slices=slices.map((s,i)=>{return{...s,color:colors[i%colors.length]}});
+  const total=slices.reduce((s,x)=>s+x.weight,0);
+  let r=Math.random()*total,winIdx=slices.length-1;
+  for(let i=0;i<slices.length;i++){r-=slices[i].weight;if(r<=0){winIdx=i;break;}}
+  let acc=0;
+  for(let i=0;i<winIdx;i++)acc+=(slices[i].weight/total)*2*Math.PI;
+  const winMid=acc+(slices[winIdx].weight/total)*Math.PI;
+  const spins=4+Math.random()*4;
+  const cur=((WS.angle%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+  const want=(2*Math.PI-winMid+Math.PI/2+2*Math.PI)%(2*Math.PI);
+  const diff=(want-cur+2*Math.PI)%(2*Math.PI);
+  WS.targetAngle=WS.angle+spins*2*Math.PI+diff;
+  WS.startAngle=WS.angle;WS.spinning=true;
+  WS.startTime=performance.now();WS.duration=2800+Math.random()*900;
+  WS.onDone=()=>cb(winIdx,WS.slices[winIdx]);
+  requestAnimationFrame(animSpin);
+}
+
+// ── Type calc ──────────────────────────────────────────────────
+function effectiveness(atk,def){const r=TYPECHART[atk];return r?(r[def]??1):1;}
+
+function matchup(poke,stageTypes){
+  const pt=[poke.type1,poke.type2].filter(Boolean);
+  const st=stageTypes.filter(t=>t!=='Mixed');
+  if(!st.length)return{cat:'Neutral',val:BALANCE.winModel.contributions.Neutral};
+  let best=0,superCount=0;
+  for(const a of pt)for(const d of st){const e=effectiveness(a,d);if(e>best)best=e;if(e>=2)superCount++;}
+  const c=BALANCE.winModel.contributions;
+  if(superCount>=2)return{cat:'VeryStrong',val:c.VeryStrong};
+  if(best>=2)return{cat:'Strong',val:c.Strong};
+  if(best>=1)return{cat:'Neutral',val:c.Neutral};
+  return{cat:'Resisted',val:c.Resisted};
+}
+
+function winChance(party,stageTypes,bonuses=[]){
+  let chance=BALANCE.winModel.baseChance;
+  const rows=[];
+  for(const p of party){const m=matchup(p,stageTypes);chance+=m.val;rows.push({name:p.name,cat:m.cat,val:m.val,bonus:false});}
+  for(const b of bonuses){chance+=b.val;rows.push({name:b.label,cat:b.cat,val:b.val,bonus:true});}
+  const cl=BALANCE.winModel.clamp;
+  return{pct:Math.max(cl[0],Math.min(cl[1],chance)),rows};
+}
+
+// ── Spin button wiring ─────────────────────────────────────────
+let _handler=null;
+function setHandler(fn){_handler=fn;document.getElementById('spinBtn').disabled=false;}
+function enableBtn(){if(!WS.spinning&&!G.runEnded)document.getElementById('spinBtn').disabled=false;}
+document.getElementById('spinBtn').addEventListener('click',()=>{
+  if(WS.spinning||G.runEnded)return;
+  if(_handler){document.getElementById('spinBtn').disabled=true;_handler();}
+});
+
+// ── Helpers ────────────────────────────────────────────────────
+function setPhase(a,b){document.getElementById('phase-label').textContent=a;document.getElementById('stage-label').textContent=b||'';}
+function setResult(t){document.getElementById('wheel-result-label').textContent=t;}
+function setQueue(t){document.getElementById('spin-queue-label').textContent=t||'';}
+function log(icon,msg,cls='log-info'){
+  const el=document.getElementById('run-log');
+  const d=document.createElement('div');d.className='log-entry '+cls;
+  d.innerHTML='<span class="log-icon">'+icon+'</span>'+msg;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function renderAll(){renderParty();renderInv();renderStage();renderOdds();}
+
+function renderParty(){
+  const grid=document.getElementById('party-grid');
+  grid.querySelectorAll('.party-slot').forEach((slot,i)=>{
+    slot.className='party-slot';slot.innerHTML='';
+    if(i<G.party.length){
+      const p=G.party[i];slot.classList.add('filled');if(p._bonus)slot.classList.add('bonus');
+      const n=document.createElement('div');n.className='slot-name';n.textContent=p.name;
+      const tt=document.createElement('div');tt.className='slot-types';
+      [p.type1,p.type2].filter(Boolean).forEach(t=>{const b=document.createElement('span');b.className='type-badge type-'+t;b.textContent=t;tt.appendChild(b);});
+      slot.appendChild(n);slot.appendChild(tt);
+      if(G.stageIndex<STAGES.length){
+        let st=STAGES[G.stageIndex].stageTypes.filter(t=>t!=='Mixed');if(!st.length)st=['Normal'];
+        const m=matchup(p,st);const c=document.createElement('div');c.className='slot-contrib';
+        c.textContent='+'+m.val+' ('+m.cat[0]+')';slot.appendChild(c);
+      }
+    }else{slot.classList.add('empty');}
+  });
+  const old=grid.querySelector('.bonus-note');if(old)old.remove();
+  if(G.bonuses.bonusSlot){const d=document.createElement('div');d.className='bonus-note';
+    d.style.cssText='grid-column:1/-1;padding:4px;font-family:var(--pf);font-size:.35rem;color:var(--accent2);border-top:1px solid var(--border);margin-top:4px;';
+    d.textContent='★ Bonus: '+G.bonuses.bonusSlot.name;grid.appendChild(d);}
+}
+
+function renderInv(){
+  const l=document.getElementById('inventory-list');l.innerHTML='';
+  [['Potion','🧪','Potion'],['TypeShield','🛡','Type Shield'],['LuckyCharm','🍀','Lucky Charm']].forEach(([k,ic,nm])=>{
+    const r=document.createElement('div');r.className='inv-row';
+    r.innerHTML='<span>'+ic+' '+nm+'</span><span class="inv-count">×'+G.inventory[k]+'</span>';l.appendChild(r);
+  });
+  const r=document.createElement('div');r.className='inv-row';
+  r.innerHTML='<span>👟 Running Shoes</span><span class="inv-permanent">'+(G.inventory.RunningShoes?'✓ Active':'—')+'</span>';l.appendChild(r);
+  if(G.bonuses.criticalBonus){const r2=document.createElement('div');r2.className='inv-row';
+    r2.innerHTML='<span>💥 Crit Bonus</span><span class="inv-permanent">+'+BALANCE.criticalBonus+'%</span>';l.appendChild(r2);}
+}
+
+function renderStage(){
+  const el=document.getElementById('stage-info');
+  if(G.stageIndex>=STAGES.length){el.innerHTML='<strong>🏆 All stages cleared!</strong>';return;}
+  const s=STAGES[G.stageIndex];
+  el.innerHTML='<div><strong>'+s.stageName+'</strong></div><div>'+s.stageKind+' — '+s.stageTypes.join(' / ')+'</div>'+(s.leader?'<div>Leader: '+s.leader+'</div>':'')+(s.badge?'<div>Badge: '+s.badge+'</div>':'')+'<div style="color:var(--text2);margin-top:4px">'+(G.stageIndex+1)+' / '+STAGES.length+'</div>';
+}
+
+function renderOdds(){
+  if(!G.party.length||G.stageIndex>=STAGES.length){
+    document.getElementById('win-chance-pct').textContent='—%';
+    document.getElementById('win-chance-fill').style.width='0%';
+    document.getElementById('battle-breakdown').innerHTML='';return;
+  }
+  let st=STAGES[G.stageIndex].stageTypes.filter(t=>t!=='Mixed');if(!st.length)st=['Normal'];
+  const bp=[...G.party];if(G.bonuses.bonusSlot)bp.push(G.bonuses.bonusSlot);
+  const bon=[];
+  if(G.inventory.TypeShield>0)bon.push({label:'Type Shield',cat:'Shield',val:BALANCE.typeShieldBonus});
+  if(G.bonuses.criticalBonus)bon.push({label:'Crit Bonus',cat:'Bonus',val:BALANCE.criticalBonus});
+  const{pct,rows}=winChance(bp,st,bon);renderBreakdown(pct,rows);
+}
+
+function renderBreakdown(pct,rows){
+  document.getElementById('win-chance-pct').textContent=pct+'%';
+  const fill=document.getElementById('win-chance-fill');
+  fill.style.width=pct+'%';fill.style.background=pct>=70?'var(--accent3)':pct>=40?'#f8d030':'var(--accent2)';
+  let h='<div class="contrib-row"><span>Base</span><span class="contrib-vs">+'+BALANCE.winModel.baseChance+'</span></div>';
+  for(const r of rows)h+='<div class="contrib-row"><span>'+r.name+' <small style="color:var(--text2)">('+r.cat+')</small></span><span class="'+(r.bonus?'contrib-bonus':'contrib-vs')+'">+'+r.val+'</span></div>';
+  h+='<div class="contrib-row" style="font-family:var(--pf);font-size:.38rem;border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span>Total</span><span>'+pct+'%</span></div>';
+  document.getElementById('battle-breakdown').innerHTML=h;
+}
+
+// ── Game flow ──────────────────────────────────────────────────
+function setupStarterWheel(){
+  const starters=[DEX_MAP[1],DEX_MAP[4],DEX_MAP[7]];
+  setPhase('Starter Selection','Choose your partner!');
+  setResult('Spin to choose your starter!');
+  setHandler(()=>spinWheel(starters.map(p=>{return{label:p.name,weight:1}}),(idx)=>{
+    const c=starters[idx];
+    G.party.push({...c});
+    log('✨','Starter: '+c.name+'!','log-capture');
+    setResult(c.name+' is your starter!');
+    G.phase='INTERMISSION';G.stageIndex=0;G.intermissionSpinsLeft=getSpins();
+    renderAll();setTimeout(()=>setupIntermission(),700);
+  }));
+}
+
+function getSpins(){return G.inventory.RunningShoes?BALANCE.intermissionSpins.withRunningShoes:BALANCE.intermissionSpins.base;}
+
+const ACTION_LABELS={Capture:'Capture!',DoubleCapture:'×2 Capture!',GuaranteedRareEncounter:'Rare!',MysteryPokemon:'Mystery!',EvolvePartyPokemon:'Evolve!',TypeShield:'Type Shield!',LuckyCharm:'Lucky Charm!',BonusSlotNextBattle:'Bonus Slot!',FindItem:'Find Item!'};
+
+function setupIntermission(){
+  const stage=STAGES[G.stageIndex];
+  setPhase('Intermission','Before: '+stage.stageName);
+  setQueue('Spins left: '+G.intermissionSpinsLeft);
+  const slices=Object.entries(BALANCE.intermissionWheel).map(([k,w])=>{return{label:ACTION_LABELS[k]||k,weight:w,action:k}});
+  setHandler(()=>{
+    if(G.intermissionSpinsLeft<=0)return;
+    spinWheel(slices,(idx,sl)=>{
+      G.intermissionSpinsLeft--;setQueue('Spins left: '+G.intermissionSpinsLeft);
+      log('🎡','Action: '+sl.label,'log-info');setResult(sl.label);
+      resolveAction(sl.action,()=>{
+        renderAll();
+        if(G.intermissionSpinsLeft>0)setTimeout(()=>setupIntermission(),700);
+        else setTimeout(()=>setupBattle(),900);
+      });
+    });
+  });
+}
+
+function resolveAction(action,cb){
+  if(action==='Capture')doCapture(false,false,cb);
+  else if(action==='DoubleCapture')doCapture(false,false,()=>setTimeout(()=>doCapture(false,false,cb),600));
+  else if(action==='GuaranteedRareEncounter')doCapture(true,false,cb);
+  else if(action==='MysteryPokemon')doCapture(false,true,cb);
+  else if(action==='EvolvePartyPokemon')doEvolve(cb);
+  else if(action==='TypeShield'){G.inventory.TypeShield++;log('🛡','Type Shield added!','log-item');cb();}
+  else if(action==='LuckyCharm'){G.inventory.LuckyCharm++;log('🍀','Lucky Charm added!','log-item');cb();}
+  else if(action==='BonusSlotNextBattle')doBonusSlot(cb);
+  else if(action==='FindItem')doFindItem(cb);
+  else cb();
+}
+
+// ── Capture ────────────────────────────────────────────────────
+function doCapture(forceRare,mystery,cb){
+  if(forceRare){
+    log('⭐','Guaranteed Rare!','log-capture');
+    const pool=BY_TIER['Rare'];
+    setTimeout(()=>spinWheel(pool.map(p=>{return{label:p.name,weight:1}}),(i)=>{log('🎰','Rare: '+pool[i].name,'log-capture');doResult(pool[i],cb);}),400);
+    return;
+  }
+  if(mystery){
+    log('❓','Mystery Pokemon!','log-capture');
+    const mw=BALANCE.mysteryTierWeights;
+    const ts=Object.entries(mw).map(([t,w])=>{return{label:t,weight:w,tier:t}});
+    setTimeout(()=>spinWheel(ts,(i,sl)=>{
+      const pool=BY_TIER[sl.tier];log('🎡','Mystery tier: '+sl.tier,'log-capture');
+      setTimeout(()=>spinWheel(pool.map(p=>{return{label:p.name,weight:1}}),(j)=>{log('🎰','Mystery: '+pool[j].name,'log-capture');doResult(pool[j],cb);}),400);
+    }),400);
+    return;
+  }
+  const tw=BALANCE.captureTierWeights;
+  const ts=Object.entries(tw).map(([t,w])=>{return{label:t,weight:w,tier:t}});
+  log('🎣','Capture! Spinning tier...','log-capture');
+  setTimeout(()=>spinWheel(ts,(i,sl)=>{
+    const pool=BY_TIER[sl.tier];log('🎡','Tier: '+sl.tier,'log-capture');
+    setTimeout(()=>spinWheel(pool.map(p=>{return{label:p.name,weight:1}}),(j)=>{log('🎰','Encounter: '+pool[j].name,'log-capture');doResult(pool[j],cb);}),400);
+  }),400);
+}
+
+function doResult(poke,cb){
+  const rw=BALANCE.captureResultWeights;
+  const rs=Object.entries(rw).map(([r,w])=>{return{label:r,weight:w}});
+  setTimeout(()=>spinWheel(rs,(i,sl)=>{
+    if(sl.label==='Fail'){log('💨','Escaped: '+poke.name,'log-lose');setResult(poke.name+' escaped!');cb();}
+    else if(sl.label==='Critical'){log('💥','Critical! '+poke.name,'log-crit');G.bonuses.criticalBonus=true;setResult('Critical! '+poke.name+'!');addParty(poke,cb);}
+    else{log('✅','Caught: '+poke.name,'log-win');setResult(poke.name+' caught!');addParty(poke,cb);}
+  }),400);
+}
+
+function addParty(poke,cb){
+  if(G.party.length<6){G.party.push({...poke});log('➕',poke.name+' joined!','log-capture');renderAll();cb();}
+  else doPartyFull(poke,cb);
+}
+
+function doPartyFull(newP,cb){
+  const pfw=BALANCE.partyFullWheel;
+  const sl=Object.entries(pfw).map(([k,w])=>{return{label:{ReplaceRandom:'Replace Random',ReplaceWorstMatchup:'Replace Worst',DiscardNew:'Discard New'}[k]||k,weight:w,action:k}});
+  log('📦','Party full!','log-info');
+  setTimeout(()=>spinWheel(sl,(i,s)=>{
+    if(s.action==='DiscardNew'){log('🗑',newP.name+' discarded','log-info');setResult(newP.name+' discarded!');cb();}
+    else if(s.action==='ReplaceRandom'){
+      const ri=Math.floor(Math.random()*G.party.length);const rm=G.party[ri];
+      G.party[ri]={...newP};log('🔄','Replaced '+rm.name+' → '+newP.name,'log-info');setResult(rm.name+' → '+newP.name);renderAll();cb();
+    }else{
+      let st=STAGES[G.stageIndex].stageTypes,wi=0,wv=Infinity;
+      G.party.forEach((p,i)=>{const v=matchup(p,st).val;if(v<wv){wv=v;wi=i;}});
+      const rm=G.party[wi];G.party[wi]={...newP};
+      log('🔄','Replaced worst '+rm.name+' → '+newP.name,'log-info');setResult(rm.name+' → '+newP.name);renderAll();cb();
+    }
+  }),400);
+}
+
+// ── Evolve ─────────────────────────────────────────────────────
+function doEvolve(cb){
+  const ev=G.party.filter(p=>p.evolvesTo);
+  if(!ev.length){log('❌','No evolvable Pokemon','log-info');setResult('No evolutions!');cb();return;}
+  const st=STAGES[G.stageIndex].stageTypes;
+  setTimeout(()=>spinWheel([{label:'Random Evolvable',weight:60,a:'r'},{label:'Worst Matchup',weight:40,a:'w'}],(i,sl)=>{
+    let tgt;
+    if(sl.a==='r')tgt=ev[Math.floor(Math.random()*ev.length)];
+    else{let wv=Infinity;for(const p of ev){const v=matchup(p,st).val;if(v<wv){wv=v;tgt=p;}}}
+    const evo=DEX_MAP[tgt.evolvesTo];
+    if(evo){const idx=G.party.findIndex(p=>p.dexNumber===tgt.dexNumber);if(idx>=0){G.party[idx]={...evo};log('✨',tgt.name+' → '+evo.name+'!','log-evolve');setResult(tgt.name+' evolved!');renderAll();}}
+    cb();
+  }),400);
+}
+
+// ── Find Item ──────────────────────────────────────────────────
+function doFindItem(cb){
+  const fw=BALANCE.findItemWheel;
+  const sl=Object.entries(fw).map(([k,w])=>{return{label:k==='RunningShoes'?'Running Shoes':k,weight:w,item:k}});
+  log('🔍','Finding item...','log-item');
+  setTimeout(()=>spinWheel(sl,(i,s)=>{
+    if(s.item==='RunningShoes'){G.inventory.RunningShoes=true;log('👟','Running Shoes!','log-item');}
+    else{G.inventory[s.item]++;log('🎒','Found '+s.label+'!','log-item');}
+    setResult('Found '+s.label+'!');renderAll();cb();
+  }),400);
+}
+
+// ── Bonus Slot ─────────────────────────────────────────────────
+function doBonusSlot(cb){
+  if(!G.party.length){cb();return;}
+  const st=STAGES[G.stageIndex].stageTypes;
+  setTimeout(()=>spinWheel([{label:'Best Matchup',weight:40,a:'b'},{label:'Random Party',weight:60,a:'r'}],(i,sl)=>{
+    let chosen;
+    if(sl.a==='b'){let bv=-1;for(const p of G.party){const v=matchup(p,st).val;if(v>bv){bv=v;chosen=p;}}}
+    else chosen=G.party[Math.floor(Math.random()*G.party.length)];
+    G.bonuses.bonusSlot={...chosen};log('⭐','Bonus slot: '+chosen.name+'!','log-item');setResult('Bonus: '+chosen.name+'!');renderAll();cb();
+  }),400);
+}
+
+// ── Battle ─────────────────────────────────────────────────────
+function setupBattle(){
+  const stage=STAGES[G.stageIndex];
+  G.phase='BATTLE';
+  const kindLabel={GYM:'Gym Battle',E4:'Elite Four',CHAMPION:'Champion!'}[stage.stageKind]||'Battle';
+  setPhase(kindLabel,stage.stageName);setQueue('');renderAll();
+
+  const bon=[];
+  if(G.inventory.TypeShield>0){G.inventory.TypeShield--;bon.push({label:'Type Shield',cat:'Shield',val:BALANCE.typeShieldBonus});log('🛡','Type Shield active!','log-item');}
+  if(G.bonuses.criticalBonus){bon.push({label:'Crit Bonus',cat:'Bonus',val:BALANCE.criticalBonus});log('💥','Crit bonus active!','log-crit');G.bonuses.criticalBonus=false;}
+
+  let st=stage.stageTypes;
+  if(st.includes('Mixed')){
+    const all=Object.keys(TYPECHART);
+    st=[all[Math.floor(Math.random()*all.length)],all[Math.floor(Math.random()*all.length)]];
+    log('🌀','Champion uses: '+st.join(' / '),'log-info');
+  }
+
+  const bp=[...G.party];
+  if(G.bonuses.bonusSlot){bp.push({...G.bonuses.bonusSlot,_bonus:true});log('⭐','Bonus: '+G.bonuses.bonusSlot.name,'log-item');}
+
+  const{pct,rows}=winChance(bp,st,bon);
+  renderBreakdown(pct,rows);
+  setResult('Win chance: '+pct+'%');
+
+  setHandler(()=>{
+    log('⚔','Battle vs '+stage.stageName+' ('+pct+'%)','log-info');
+    spinWheel([{label:'WIN!',weight:pct},{label:'LOSE...',weight:Math.max(1,100-pct)}],(i,sl)=>{
+      G.bonuses.bonusSlot=null;
+      if(sl.label==='WIN!'){
+        log('🏆','VICTORY vs '+stage.stageName+'!','log-win');
+        setResult('Victory!'+(stage.badge?' '+stage.badge+' earned!':''));renderAll();advanceStage();
+      }else{
+        log('💀','DEFEAT vs '+stage.stageName+'...','log-lose');
+        setResult('Defeat! Checking bag...');renderAll();handleDefeat(stage,st);
+      }
+    });
+  });
+}
+
+function handleDefeat(stage,st){
+  if(G.inventory.LuckyCharm>0){G.inventory.LuckyCharm--;log('🍀','Lucky Charm! Rerolling...','log-item');renderAll();setTimeout(()=>retryBattle(stage,st),700);}
+  else if(G.inventory.Potion>0){G.inventory.Potion--;log('🧪','Potion! Retrying...','log-item');renderAll();setTimeout(()=>retryBattle(stage,st),700);}
+  else endRun(false,stage.stageName);
+}
+
+function retryBattle(stage,st){
+  const{pct,rows}=winChance(G.party,st,[]);renderBreakdown(pct,rows);
+  setResult('Retry! '+pct+'% win');log('🔄','Retry — '+pct+'%','log-info');
+  setHandler(()=>spinWheel([{label:'WIN!',weight:pct},{label:'LOSE...',weight:Math.max(1,100-pct)}],(i,sl)=>{
+    if(sl.label==='WIN!'){log('🏆','Victory on retry!','log-win');setResult('Victory on retry!');renderAll();advanceStage();}
+    else if(G.inventory.Potion>0){G.inventory.Potion--;log('🧪','Potion! Retrying...','log-item');renderAll();setTimeout(()=>retryBattle(stage,st),700);}
+    else endRun(false,stage.stageName);
+  }));
+}
+
+function advanceStage(){
+  G.stageIndex++;
+  if(G.stageIndex>=STAGES.length){endRun(true,'Champion');return;}
+  G.phase='INTERMISSION';G.intermissionSpinsLeft=getSpins();renderAll();setTimeout(()=>setupIntermission(),800);
+}
+
+function endRun(win,name){
+  G.phase='END';G.runEnded=true;renderAll();
+  document.getElementById('overlay-title').textContent=win?'🏆 CHAMPION!':'💀 RUN OVER';
+  document.getElementById('overlay-msg').textContent=win?'You conquered Kanto! Party: '+G.party.map(p=>p.name).join(', '):'Defeated by '+name+'. Party: '+(G.party.map(p=>p.name).join(', ')||'none');
+  document.getElementById('overlay').classList.remove('hidden');
+  log(win?'🏆':'💀',win?'Hall of Fame!':'Run ended at: '+name,win?'log-win':'log-lose');
+}
+
+// ── Dark mode & restart ────────────────────────────────────────
+document.getElementById('darkModeToggle').addEventListener('click',()=>{
+  const next=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  document.getElementById('darkModeToggle').textContent=next==='dark'?'☾':'☀';
+  if(WS.slices.length)drawWheel(WS.slices,WS.angle);
+});
+function doRestart(){G.runEnded=false;_handler=null;initGame();}
+document.getElementById('restartBtn').addEventListener('click',doRestart);
+document.getElementById('overlay-restart').addEventListener('click',doRestart);
+
+// ── Boot ───────────────────────────────────────────────────────
+initGame();
+</script>
 </body>
 </html>
