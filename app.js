@@ -254,17 +254,14 @@ const INLINE_BALANCE = {
 let G = {};
 let DATA = {};
 
-// ── Data Init (synchronous, no fetch) ─────────────────────────
+// ── Data Init ─────────────────────────────────────────────────
 function loadData() {
   DATA.pokedex = INLINE_POKEDEX;
   DATA.typeChart = INLINE_TYPECHART;
   DATA.stages = INLINE_STAGES;
   DATA.balance = INLINE_BALANCE;
-
   DATA.byTier = { Common: [], Uncommon: [], Rare: [] };
-  for (const p of DATA.pokedex) {
-    DATA.byTier[p.tier].push(p);
-  }
+  for (const p of DATA.pokedex) DATA.byTier[p.tier].push(p);
   DATA.dexMap = {};
   for (const p of DATA.pokedex) DATA.dexMap[p.dexNumber] = p;
 }
@@ -298,21 +295,43 @@ let wheelState = {
 function buildWheel(slices) {
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   const colors = isDark ? WHEEL_COLORS_DARK : WHEEL_COLORS_LIGHT;
+  return slices.map((s, i) => ({ ...s, color: colors[i % colors.length] }));
+}
+
+// Returns the label of the slice currently under the pointer (top of wheel).
+// The pointer is at the top, which corresponds to angle=0 in draw coords.
+// draw: slices start at (wheelAngle - PI/2). Pointer at top = absolute angle -PI/2 from center.
+// The slice at the pointer is whichever slice contains angle 0 (top) in the rotated wheel.
+function getPointerSlice(slices, angle) {
+  if (!slices || slices.length === 0) return null;
   const total = slices.reduce((s, x) => s + x.weight, 0);
-  return slices.map((s, i) => ({
-    ...s,
-    proportion: s.weight / total,
-    color: colors[i % colors.length]
-  }));
+  // "top" in our coordinate: the pointer sits at angle = -(PI/2) + angle relative to draw start
+  // Slices are drawn starting at (angle - PI/2), going clockwise.
+  // The pointer is at the top = angle (- PI/2) in absolute terms.
+  // We need to find which slice contains the pointer position.
+  // Normalize: pointer position within wheel = 0 (start of first slice reference angle)
+  // pointer is at the draw start angle = angle - PI/2
+  // So relative to draw start (angle - PI/2), pointer is at 0.
+  // But we want offset from angle=0 (the draw start of first slice at offset angle - PI/2)
+  // Actually simpler: the pointer is at the top. The wheel's reference angle rotates.
+  // At angle=0, slice[0] starts at -PI/2 (top). So pointer hits slice[0]'s start.
+  // pointer position in "slice space": we need (0 - (angle - PI/2)) mod 2PI = (PI/2 - angle) mod 2PI
+  // = how far into the wheel (clockwise from its start) the pointer sits
+  let pointerInWheel = ((Math.PI / 2 - angle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  let acc = 0;
+  for (const s of slices) {
+    const sweep = (s.weight / total) * 2 * Math.PI;
+    if (pointerInWheel < acc + sweep) return s;
+    acc += sweep;
+  }
+  return slices[slices.length - 1];
 }
 
 function drawWheel(slices, angle) {
-  const W = canvas.width;
-  const H = canvas.height;
+  const W = canvas.width, H = canvas.height;
   const cx = W / 2, cy = H / 2;
   const r = Math.min(W, H) / 2 - 6;
   ctx.clearRect(0, 0, W, H);
-
   if (!slices || slices.length === 0) return;
 
   let start = angle - Math.PI / 2;
@@ -337,23 +356,22 @@ function drawWheel(slices, angle) {
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(mid);
-      const labelR = r * 0.65;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
       ctx.fillStyle = isDark ? '#fff' : '#000';
       ctx.shadowColor = isDark ? '#000' : '#fff';
       ctx.shadowBlur = 4;
-      const maxLen = 14;
-      let label = s.label.length > maxLen ? s.label.slice(0, maxLen - 1) + '\u2026' : s.label;
+      let label = s.label.length > 14 ? s.label.slice(0, 13) + '\u2026' : s.label;
       const fontSize = Math.max(8, Math.min(13, sweep * 40));
       ctx.font = `bold ${fontSize}px 'VT323', monospace`;
-      ctx.fillText(label, labelR, 0);
+      ctx.fillText(label, r * 0.65, 0);
       ctx.restore();
     }
     start = end;
   }
 
+  // Center hub
   ctx.beginPath();
   ctx.arc(cx, cy, 18, 0, 2 * Math.PI);
   ctx.fillStyle = '#111';
@@ -363,17 +381,19 @@ function drawWheel(slices, angle) {
   ctx.stroke();
 }
 
-function easeOut(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
+function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
 function animateSpin(timestamp) {
   if (!wheelState.spinning) return;
   const elapsed = timestamp - wheelState.startTime;
   const progress = Math.min(elapsed / wheelState.duration, 1);
-  const easedProgress = easeOut(progress);
-  wheelState.angle = wheelState.startAngle + (wheelState.targetAngle - wheelState.startAngle) * easedProgress;
+  wheelState.angle = wheelState.startAngle + (wheelState.targetAngle - wheelState.startAngle) * easeOut(progress);
   drawWheel(wheelState.slices, wheelState.angle);
+
+  // Live pointer label update
+  const current = getPointerSlice(wheelState.slices, wheelState.angle);
+  if (current) setPointerLabel(current.label);
+
   if (progress < 1) {
     requestAnimationFrame(animateSpin);
   } else {
@@ -390,32 +410,47 @@ function spinWheel(slices, onDone) {
   const built = buildWheel(slices);
   wheelState.slices = built;
 
+  // Weighted random winner
   const total = slices.reduce((s, x) => s + x.weight, 0);
   let r = Math.random() * total;
-  let winnerIdx = 0;
+  let winnerIdx = slices.length - 1;
   for (let i = 0; i < slices.length; i++) {
     r -= slices[i].weight;
     if (r <= 0) { winnerIdx = i; break; }
   }
 
+  // Compute target angle so winner slice mid is at pointer (top)
   const totalW = slices.reduce((s, x) => s + x.weight, 0);
   let accAngle = 0;
   for (let i = 0; i < winnerIdx; i++) accAngle += (slices[i].weight / totalW) * 2 * Math.PI;
   const winnerMid = accAngle + (slices[winnerIdx].weight / totalW) * Math.PI;
 
-  const spins = 4 + Math.random() * 4;
+  // We want pointer (top) to land on winnerMid.
+  // pointer position in slice space: (PI/2 - angle) mod 2PI = winnerMid
+  // => angle = PI/2 - winnerMid  (mod 2PI)
+  const targetNorm = ((Math.PI / 2 - winnerMid) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
   const currentNorm = ((wheelState.angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-  const wantAngle = (2 * Math.PI - winnerMid + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
-  const diff = (wantAngle - currentNorm + 2 * Math.PI) % (2 * Math.PI);
-  wheelState.targetAngle = wheelState.angle + (spins * 2 * Math.PI) + diff;
+  const spins = 4 + Math.random() * 4;
+  let diff = (targetNorm - currentNorm + 2 * Math.PI) % (2 * Math.PI);
+  if (diff < 0.01) diff += 2 * Math.PI; // ensure at least one full rotation portion
 
-  wheelState.spinning = true;
+  wheelState.targetAngle = wheelState.angle + spins * 2 * Math.PI + diff;
   wheelState.startAngle = wheelState.angle;
+  wheelState.spinning = true;
   wheelState.startTime = performance.now();
   wheelState.duration = 2800 + Math.random() * 1000;
-  wheelState.onDone = () => onDone(winnerIdx, built[winnerIdx]);
+  wheelState.onDone = () => {
+    const finalSlice = getPointerSlice(built, wheelState.angle);
+    setPointerLabel(finalSlice ? finalSlice.label : '');
+    onDone(winnerIdx, built[winnerIdx]);
+  };
   canvas.classList.add('wheel-spinning');
   requestAnimationFrame(animateSpin);
+}
+
+// ── Pointer Label ──────────────────────────────────────────────
+function setPointerLabel(text) {
+  document.getElementById('pointer-label').textContent = text ? `▼  ${text}` : '';
 }
 
 // ── Type Effectiveness ─────────────────────────────────────────
@@ -427,23 +462,20 @@ function getEffectiveness(attackType, defType) {
 
 function getPokemonMatchup(pokemon, stageTypes) {
   const pokemonTypes = [pokemon.type1, pokemon.type2].filter(Boolean);
-  const stageTypesFiltered = stageTypes.filter(t => t !== 'Mixed');
-
-  let best = 0;
-  let superCount = 0;
+  const filtered = stageTypes.filter(t => t !== 'Mixed');
+  let best = 0, superCount = 0;
   for (const pt of pokemonTypes) {
-    for (const st of stageTypesFiltered) {
+    for (const st of filtered) {
       const eff = getEffectiveness(pt, st);
       if (eff > best) best = eff;
       if (eff >= 2) superCount++;
     }
   }
-
   const bal = DATA.balance.winModel.contributions;
   if (superCount >= 2) return { category: 'VeryStrong', value: bal.VeryStrong };
-  if (best >= 2)       return { category: 'Strong',    value: bal.Strong };
-  if (best >= 1)       return { category: 'Neutral',   value: bal.Neutral };
-  return                      { category: 'Resisted',  value: bal.Resisted };
+  if (best >= 2)       return { category: 'Strong',     value: bal.Strong };
+  if (best >= 1)       return { category: 'Neutral',    value: bal.Neutral };
+  return                      { category: 'Resisted',   value: bal.Resisted };
 }
 
 function computeWinChance(party, stageTypes, bonuses = []) {
@@ -459,8 +491,42 @@ function computeWinChance(party, stageTypes, bonuses = []) {
     chance += b.value;
     breakdown.push({ name: b.label, category: b.category, value: b.value, bonus: true });
   }
-  const clamped = Math.max(bal.clamp[0], Math.min(bal.clamp[1], chance));
-  return { chance: clamped, breakdown, raw: chance };
+  return { chance: Math.max(bal.clamp[0], Math.min(bal.clamp[1], chance)), breakdown };
+}
+
+// ── Spin Queue — manual player-driven sub-spins ────────────────
+// Each item: { slices, label, onResult(winnerIdx, slice, cb) }
+// Player presses SPIN for every step. Between steps we show a prompt.
+let _spinQueue = [];
+let _onQueueDone = null;
+
+function enqueueSpins(steps, onAllDone) {
+  _spinQueue = [...steps];
+  _onQueueDone = onAllDone;
+  advanceQueue();
+}
+
+function advanceQueue() {
+  if (_spinQueue.length === 0) {
+    if (_onQueueDone) _onQueueDone();
+    return;
+  }
+  const step = _spinQueue.shift();
+  setWheelResult(step.prompt || 'Spin!');
+  setPointerLabel('');
+  drawWheel(buildWheel(step.slices), wheelState.angle);
+  // Pre-draw so player sees the wheel before spinning
+  wheelState.slices = buildWheel(step.slices);
+  drawWheel(wheelState.slices, wheelState.angle);
+
+  setSpinHandler(() => {
+    spinWheel(step.slices, (idx, slice) => {
+      step.onResult(idx, slice, () => {
+        renderAll();
+        advanceQueue();
+      });
+    });
+  });
 }
 
 // ── Game Init ──────────────────────────────────────────────────
@@ -470,33 +536,40 @@ function initGame() {
     stageIndex: 0,
     party: [],
     inventory: { Potion: 0, LuckyCharm: 0, TypeShield: 0, RunningShoes: false },
-    bonuses: { criticalBonus: false, typeShield: false, bonusSlot: null },
+    bonuses: { criticalBonus: false, bonusSlot: null },
     intermissionSpinsLeft: 0,
     runEnded: false,
-    runLog: [],
   };
+  _spinQueue = [];
+  _onQueueDone = null;
+  document.getElementById('run-log').innerHTML = '';
+  setPointerLabel('');
   renderAll();
   drawWheel([], 0);
   setupStarterWheel();
 }
 
-// ── Starter Wheel ──────────────────────────────────────────────
+// ── Starter ────────────────────────────────────────────────────
 function setupStarterWheel() {
   const starters = [DATA.dexMap[1], DATA.dexMap[4], DATA.dexMap[7]];
   const slices = starters.map(p => ({ label: p.name, weight: 1 }));
   setPhaseLabel('Starter Selection', 'Who will you choose?');
   setWheelResult('Spin to choose your starter!');
+  setPointerLabel('');
+  wheelState.slices = buildWheel(slices);
+  drawWheel(wheelState.slices, wheelState.angle);
+
   setSpinHandler(() => {
     spinWheel(slices, (idx) => {
       const chosen = starters[idx];
-      log('\u2728', `Starter chosen: ${chosen.name}!`, 'log-capture');
+      log('\u2728', `Starter: ${chosen.name}!`, 'log-capture');
       G.party.push({ ...chosen });
       G.phase = 'INTERMISSION';
       G.stageIndex = 0;
       G.intermissionSpinsLeft = getIntermissionSpins();
       setWheelResult(`${chosen.name} is your starter!`);
       renderAll();
-      setTimeout(() => setupIntermissionWheel(), 600);
+      setupIntermissionWheel();
     });
   });
 }
@@ -509,6 +582,10 @@ function getIntermissionSpins() {
 }
 
 function setupIntermissionWheel() {
+  if (G.intermissionSpinsLeft <= 0) {
+    setupBattlePhase();
+    return;
+  }
   const stage = DATA.stages[G.stageIndex];
   setPhaseLabel('Intermission', `Before: ${stage.stageName}`);
   updateSpinQueueLabel();
@@ -517,169 +594,227 @@ function setupIntermissionWheel() {
   const slices = Object.entries(bw).map(([key, w]) => ({
     label: formatActionLabel(key), weight: w, action: key
   }));
+  wheelState.slices = buildWheel(slices);
+  drawWheel(wheelState.slices, wheelState.angle);
+  setWheelResult('Spin the intermission wheel!');
+  setPointerLabel('');
 
   setSpinHandler(() => {
-    if (G.intermissionSpinsLeft <= 0) return;
     spinWheel(slices, (idx, slice) => {
       G.intermissionSpinsLeft--;
       updateSpinQueueLabel();
-      log('\u1F3A1', `Spin: ${slice.label}`, 'log-info');
-      setWheelResult(slice.label);
+      log('\u1F3A1', `Action: ${slice.label}`, 'log-info');
+      setWheelResult(`${slice.label}`);
       resolveIntermissionAction(slice.action, () => {
         renderAll();
-        if (G.intermissionSpinsLeft > 0) {
-          setTimeout(() => setupIntermissionWheel(), 700);
-        } else {
-          setTimeout(() => setupBattlePhase(), 900);
-        }
+        // After action done, setup next intermission spin or go to battle
+        setupIntermissionWheel();
       });
     });
   });
 }
 
 function formatActionLabel(key) {
-  const labels = {
+  return {
     Capture: 'Capture!', DoubleCapture: 'x2 Capture!',
     GuaranteedRareEncounter: 'Rare!', MysteryPokemon: 'Mystery!',
     EvolvePartyPokemon: 'Evolve!', TypeShield: 'Type Shield!',
     LuckyCharm: 'Lucky Charm!', BonusSlotNextBattle: 'Bonus Slot!',
     FindItem: 'Find Item!',
-  };
-  return labels[key] || key;
+  }[key] || key;
 }
 
 function updateSpinQueueLabel() {
   const el = document.getElementById('spin-queue-label');
-  el.textContent = G.phase === 'INTERMISSION' ? `Spins left: ${G.intermissionSpinsLeft}` : '';
+  el.textContent = G.phase === 'INTERMISSION' ? `Intermission spins left: ${G.intermissionSpinsLeft}` : '';
 }
 
 // ── Action Resolver ────────────────────────────────────────────
 function resolveIntermissionAction(action, cb) {
   switch(action) {
-    case 'Capture':                 doCapture(false, false, cb); break;
-    case 'DoubleCapture':           doCapture(false, false, () => setTimeout(() => doCapture(false, false, cb), 500)); break;
-    case 'GuaranteedRareEncounter': doCapture(true, false, cb); break;
-    case 'MysteryPokemon':          doCapture(false, true, cb); break;
-    case 'EvolvePartyPokemon':      doEvolve(cb); break;
-    case 'TypeShield':              G.inventory.TypeShield++; log('\u1F6E1', 'Type Shield added!', 'log-item'); cb(); break;
-    case 'LuckyCharm':              G.inventory.LuckyCharm++; log('\u1F340', 'Lucky Charm added!', 'log-item'); cb(); break;
-    case 'BonusSlotNextBattle':     doBonusSlot(cb); break;
-    case 'FindItem':                doFindItem(cb); break;
+    case 'Capture':
+      doCapture(false, false, cb); break;
+    case 'DoubleCapture':
+      log('\u1F3A3', 'Double Capture! First capture...', 'log-capture');
+      doCapture(false, false, () => {
+        log('\u1F3A3', 'Double Capture! Second capture...', 'log-capture');
+        doCapture(false, false, cb);
+      });
+      break;
+    case 'GuaranteedRareEncounter':
+      doCapture(true, false, cb); break;
+    case 'MysteryPokemon':
+      doCapture(false, true, cb); break;
+    case 'EvolvePartyPokemon':
+      doEvolve(cb); break;
+    case 'TypeShield':
+      G.inventory.TypeShield++;
+      log('\u1F6E1', 'Type Shield added to bag!', 'log-item');
+      cb(); break;
+    case 'LuckyCharm':
+      G.inventory.LuckyCharm++;
+      log('\u1F340', 'Lucky Charm added to bag!', 'log-item');
+      cb(); break;
+    case 'BonusSlotNextBattle':
+      doBonusSlot(cb); break;
+    case 'FindItem':
+      doFindItem(cb); break;
     default: cb();
   }
 }
 
-// ── Capture System ─────────────────────────────────────────────
+// ── Capture — fully manual sub-spins ──────────────────────────
 function doCapture(forceRare, mystery, cb) {
+  const steps = [];
+
   if (forceRare) {
-    log('\u2B50', 'Guaranteed Rare Encounter!', 'log-capture');
+    log('\u2B50', 'Guaranteed Rare Encounter! Spin to pick the Pokemon.', 'log-capture');
     const pool = DATA.byTier['Rare'];
-    const slices = pool.map(p => ({ label: p.name, weight: 1 }));
-    setTimeout(() => spinWheel(slices, (idx) => {
-      const caught = pool[idx];
-      log('\u1F3B0', `Rare: ${caught.name}`, 'log-capture');
-      doCaptureResult(caught, cb);
-    }), 400);
-    return;
-  }
-  if (mystery) {
-    log('\u2753', 'Mystery Pokemon!', 'log-capture');
+    steps.push({
+      prompt: '\u2B50 Spin to pick the Rare Pokemon!',
+      slices: pool.map(p => ({ label: p.name, weight: 1 })),
+      onResult(idx, slice, next) {
+        const caught = pool[idx];
+        log('\u1F3B0', `Rare encounter: ${caught.name}`, 'log-capture');
+        pushCaptureResultStep(steps, caught, cb);
+        next();
+      }
+    });
+  } else if (mystery) {
+    log('\u2753', 'Mystery Pokemon! Spin the tier.', 'log-capture');
     const mw = DATA.balance.mysteryTierWeights;
-    const tSlices = Object.entries(mw).map(([t, w]) => ({ label: t, weight: w, tier: t }));
-    setTimeout(() => spinWheel(tSlices, (idx, slice) => {
-      const pool = DATA.byTier[slice.tier];
-      const pSlices = pool.map(p => ({ label: p.name, weight: 1 }));
-      log('\u1F3A1', `Mystery Tier: ${slice.tier}`, 'log-capture');
-      setTimeout(() => spinWheel(pSlices, (idx2) => {
-        const caught = pool[idx2];
-        log('\u1F3B0', `Mystery: ${caught.name}`, 'log-capture');
-        doCaptureResult(caught, cb);
-      }), 400);
-    }), 400);
-    return;
+    steps.push({
+      prompt: '\u2753 Mystery Pokemon — Spin the tier!',
+      slices: Object.entries(mw).map(([t, w]) => ({ label: t, weight: w, tier: t })),
+      onResult(idx, slice, next) {
+        const tier = slice.tier;
+        log('\u1F3A1', `Mystery tier: ${tier}`, 'log-capture');
+        const pool = DATA.byTier[tier];
+        // Inject Pokemon step at front of remaining queue
+        _spinQueue.unshift({
+          prompt: `\u2753 Spin to pick the ${tier} Pokemon!`,
+          slices: pool.map(p => ({ label: p.name, weight: 1 })),
+          onResult(idx2, slice2, next2) {
+            const caught = pool[idx2];
+            log('\u1F3B0', `Mystery: ${caught.name}`, 'log-capture');
+            // Inject result step
+            _spinQueue.unshift(makeCaptureResultStep(caught, cb));
+            next2();
+          }
+        });
+        next();
+      }
+    });
+  } else {
+    // Standard: Tier → Pokemon → Result
+    log('\u1F3A3', 'Capture! Spin the tier.', 'log-capture');
+    const tw = DATA.balance.captureTierWeights;
+    steps.push({
+      prompt: '\u1F3A3 Capture — Spin the tier!',
+      slices: Object.entries(tw).map(([t, w]) => ({ label: t, weight: w, tier: t })),
+      onResult(idx, slice, next) {
+        const tier = slice.tier;
+        log('\u1F3A1', `Tier: ${tier}`, 'log-capture');
+        const pool = DATA.byTier[tier];
+        _spinQueue.unshift({
+          prompt: `\u1F3A3 Spin to pick the ${tier} Pokemon!`,
+          slices: pool.map(p => ({ label: p.name, weight: 1 })),
+          onResult(idx2, slice2, next2) {
+            const caught = pool[idx2];
+            log('\u1F3B0', `Encounter: ${caught.name}`, 'log-capture');
+            _spinQueue.unshift(makeCaptureResultStep(caught, cb));
+            next2();
+          }
+        });
+        next();
+      }
+    });
   }
-  // Standard
-  const tw = DATA.balance.captureTierWeights;
-  const tSlices = Object.entries(tw).map(([t, w]) => ({ label: t, weight: w, tier: t }));
-  log('\u1F3A3', 'Capture! Spinning tier...', 'log-capture');
-  setTimeout(() => spinWheel(tSlices, (idx, slice) => {
-    const pool = DATA.byTier[slice.tier];
-    const pSlices = pool.map(p => ({ label: p.name, weight: 1 }));
-    log('\u1F3A1', `Tier: ${slice.tier}`, 'log-capture');
-    setTimeout(() => spinWheel(pSlices, (idx2) => {
-      const caught = pool[idx2];
-      log('\u1F3B0', `Encounter: ${caught.name}`, 'log-capture');
-      doCaptureResult(caught, cb);
-    }), 400);
-  }), 400);
+
+  enqueueSpins(steps, () => {});
 }
 
-function doCaptureResult(pokemon, cb) {
+function makeCaptureResultStep(pokemon, cb) {
   const rw = DATA.balance.captureResultWeights;
-  const rSlices = Object.entries(rw).map(([r, w]) => ({ label: r, weight: w }));
-  log('\u1F3AF', 'Spinning result...', 'log-capture');
-  setTimeout(() => spinWheel(rSlices, (idx, slice) => {
-    const result = slice.label;
-    if (result === 'Fail') {
-      log('\u1F4A8', `Capture failed! ${pokemon.name} escaped.`, 'log-lose');
-      setWheelResult(`${pokemon.name} escaped!`);
-      cb();
-    } else if (result === 'Critical') {
-      log('\u1F4A5', `Critical capture! ${pokemon.name} + battle bonus!`, 'log-crit');
-      G.bonuses.criticalBonus = true;
-      setWheelResult(`Critical! ${pokemon.name} caught!`);
-      addToParty(pokemon, cb);
-    } else {
-      log('\u2705', `Caught ${pokemon.name}!`, 'log-win');
-      setWheelResult(`${pokemon.name} caught!`);
-      addToParty(pokemon, cb);
+  return {
+    prompt: `\u1F3AF Spin the capture result for ${pokemon.name}!`,
+    slices: Object.entries(rw).map(([r, w]) => ({ label: r, weight: w })),
+    onResult(idx, slice, next) {
+      const result = slice.label;
+      if (result === 'Fail') {
+        log('\u1F4A8', `Capture failed! ${pokemon.name} escaped.`, 'log-lose');
+        setWheelResult(`${pokemon.name} escaped!`);
+        cb();
+        next();
+      } else if (result === 'Critical') {
+        log('\u1F4A5', `Critical! ${pokemon.name} + battle bonus +${DATA.balance.criticalBonus}%!`, 'log-crit');
+        G.bonuses.criticalBonus = true;
+        setWheelResult(`Critical! ${pokemon.name} caught!`);
+        addToParty(pokemon, cb, next);
+      } else {
+        log('\u2705', `Caught ${pokemon.name}!`, 'log-win');
+        setWheelResult(`${pokemon.name} caught!`);
+        addToParty(pokemon, cb, next);
+      }
     }
-  }), 400);
+  };
 }
 
-function addToParty(pokemon, cb) {
+// Legacy helper (for forceRare path which builds steps array before enqueueing)
+function pushCaptureResultStep(steps, pokemon, cb) {
+  // We just push into the queue directly since steps array is already being processed
+  _spinQueue.unshift(makeCaptureResultStep(pokemon, cb));
+}
+
+function addToParty(pokemon, cb, next) {
   if (G.party.length < 6) {
     G.party.push({ ...pokemon });
     log('\u2795', `${pokemon.name} joined the party!`, 'log-capture');
     renderAll();
     cb();
+    next();
   } else {
-    doPartyFullSpin(pokemon, cb);
+    doPartyFullSpin(pokemon, cb, next);
   }
 }
 
-function doPartyFullSpin(newPokemon, cb) {
+function doPartyFullSpin(newPokemon, cb, next) {
   const pfw = DATA.balance.partyFullWheel;
   const slices = Object.entries(pfw).map(([k, w]) => ({ label: formatPartyFullLabel(k), weight: w, action: k }));
-  log('\u1F4E6', 'Party full! Deciding...', 'log-info');
   const stage = DATA.stages[G.stageIndex];
-  setTimeout(() => spinWheel(slices, (idx, slice) => {
-    const action = slice.action;
-    if (action === 'DiscardNew') {
-      log('\u1F5D1', `${newPokemon.name} discarded.`, 'log-info');
-      setWheelResult(`${newPokemon.name} discarded!`);
-      cb();
-    } else if (action === 'ReplaceRandom') {
-      const i = Math.floor(Math.random() * G.party.length);
-      const removed = G.party[i];
-      G.party[i] = { ...newPokemon };
-      log('\u1F504', `Replaced ${removed.name} with ${newPokemon.name}.`, 'log-info');
-      setWheelResult(`${removed.name} \u2192 ${newPokemon.name}`);
-      renderAll(); cb();
-    } else {
-      const stageTypes = stage.stageTypes;
-      let worstIdx = 0, worstVal = Infinity;
-      G.party.forEach((p, i) => {
-        const { value } = getPokemonMatchup(p, stageTypes);
-        if (value < worstVal) { worstVal = value; worstIdx = i; }
-      });
-      const removed = G.party[worstIdx];
-      G.party[worstIdx] = { ...newPokemon };
-      log('\u1F504', `Replaced worst (${removed.name}) with ${newPokemon.name}.`, 'log-info');
-      setWheelResult(`${removed.name} \u2192 ${newPokemon.name}`);
-      renderAll(); cb();
+  log('\u1F4E6', 'Party full! Spin to decide...', 'log-info');
+  _spinQueue.unshift({
+    prompt: '\u1F4E6 Party full — what happens to the new Pokemon?',
+    slices,
+    onResult(idx, slice, next2) {
+      const action = slice.action;
+      if (action === 'DiscardNew') {
+        log('\u1F5D1', `${newPokemon.name} discarded.`, 'log-info');
+        setWheelResult(`${newPokemon.name} discarded!`);
+        cb(); next2();
+      } else if (action === 'ReplaceRandom') {
+        const i = Math.floor(Math.random() * G.party.length);
+        const removed = G.party[i];
+        G.party[i] = { ...newPokemon };
+        log('\u1F504', `Replaced ${removed.name} \u2192 ${newPokemon.name}.`, 'log-info');
+        setWheelResult(`${removed.name} \u2192 ${newPokemon.name}`);
+        renderAll(); cb(); next2();
+      } else {
+        const stageTypes = stage.stageTypes;
+        let worstIdx = 0, worstVal = Infinity;
+        G.party.forEach((p, i) => {
+          const { value } = getPokemonMatchup(p, stageTypes);
+          if (value < worstVal) { worstVal = value; worstIdx = i; }
+        });
+        const removed = G.party[worstIdx];
+        G.party[worstIdx] = { ...newPokemon };
+        log('\u1F504', `Replaced worst (${removed.name}) \u2192 ${newPokemon.name}.`, 'log-info');
+        setWheelResult(`${removed.name} \u2192 ${newPokemon.name}`);
+        renderAll(); cb(); next2();
+      }
     }
-  }), 400);
+  });
+  next();
 }
 
 function formatPartyFullLabel(key) {
@@ -696,51 +831,60 @@ function doEvolve(cb) {
   }
   const stage = DATA.stages[G.stageIndex];
   const stageTypes = stage.stageTypes;
-  const slices = [
-    { label: 'Random Evolvable', weight: 60, action: 'random' },
-    { label: 'Worst Matchup', weight: 40, action: 'worst' },
-  ];
-  setTimeout(() => spinWheel(slices, (idx, slice) => {
-    let target;
-    if (slice.action === 'random') {
-      target = evolvable[Math.floor(Math.random() * evolvable.length)];
-    } else {
-      let worstVal = Infinity;
-      for (const p of evolvable) {
-        const { value } = getPokemonMatchup(p, stageTypes);
-        if (value < worstVal) { worstVal = value; target = p; }
+  enqueueSpins([{
+    prompt: '\u2728 Evolve — Spin to pick which one!',
+    slices: [
+      { label: 'Random Evolvable', weight: 60, action: 'random' },
+      { label: 'Worst Matchup', weight: 40, action: 'worst' },
+    ],
+    onResult(idx, slice, next) {
+      let target;
+      if (slice.action === 'random') {
+        target = evolvable[Math.floor(Math.random() * evolvable.length)];
+      } else {
+        let worstVal = Infinity;
+        for (const p of evolvable) {
+          const { value } = getPokemonMatchup(p, stageTypes);
+          if (value < worstVal) { worstVal = value; target = p; }
+        }
       }
-    }
-    const evolved = DATA.dexMap[target.evolvesTo];
-    if (evolved) {
-      const i = G.party.findIndex(p => p.dexNumber === target.dexNumber);
-      if (i >= 0) {
-        G.party[i] = { ...evolved };
-        log('\u2728', `${target.name} \u2192 ${evolved.name}!`, 'log-evolve');
-        setWheelResult(`${target.name} evolved into ${evolved.name}!`);
-        renderAll();
+      const evolved = DATA.dexMap[target.evolvesTo];
+      if (evolved) {
+        const i = G.party.findIndex(p => p.dexNumber === target.dexNumber);
+        if (i >= 0) {
+          G.party[i] = { ...evolved };
+          log('\u2728', `${target.name} \u2192 ${evolved.name}!`, 'log-evolve');
+          setWheelResult(`${target.name} \u2192 ${evolved.name}!`);
+          renderAll();
+        }
       }
+      cb(); next();
     }
-    cb();
-  }), 400);
+  }], () => {});
 }
 
 // ── Find Item ──────────────────────────────────────────────────
 function doFindItem(cb) {
   const fw = DATA.balance.findItemWheel;
-  const slices = Object.entries(fw).map(([k, w]) => ({ label: k === 'RunningShoes' ? 'Running Shoes' : k, weight: w, item: k }));
-  log('\u1F50D', 'Finding an item...', 'log-item');
-  setTimeout(() => spinWheel(slices, (idx, slice) => {
-    if (slice.item === 'RunningShoes') {
-      G.inventory.RunningShoes = true;
-      log('\u1F45F', 'Running Shoes! +1 intermission spin!', 'log-item');
-    } else {
-      G.inventory[slice.item]++;
-      log('\u1F392', `Found ${slice.label}!`, 'log-item');
+  const slices = Object.entries(fw).map(([k, w]) => ({
+    label: k === 'RunningShoes' ? 'Running Shoes' : k, weight: w, item: k
+  }));
+  log('\u1F50D', 'Find Item! Spin to see what you get.', 'log-item');
+  enqueueSpins([{
+    prompt: '\u1F50D Find Item — Spin!',
+    slices,
+    onResult(idx, slice, next) {
+      if (slice.item === 'RunningShoes') {
+        G.inventory.RunningShoes = true;
+        log('\u1F45F', 'Running Shoes! +1 intermission spin per stage!', 'log-item');
+      } else {
+        G.inventory[slice.item]++;
+        log('\u1F392', `Found ${slice.label}!`, 'log-item');
+      }
+      setWheelResult(`Found: ${slice.label}!`);
+      renderAll(); cb(); next();
     }
-    setWheelResult(`Found ${slice.label}!`);
-    renderAll(); cb();
-  }), 400);
+  }], () => {});
 }
 
 // ── Bonus Slot ─────────────────────────────────────────────────
@@ -752,22 +896,27 @@ function doBonusSlot(cb) {
     { label: 'Best Matchup', weight: 40, action: 'best' },
     { label: 'Random Party', weight: 60, action: 'random' },
   ];
-  setTimeout(() => spinWheel(slices, (idx, slice) => {
-    let chosen;
-    if (slice.action === 'best') {
-      let bestVal = -1;
-      for (const p of G.party) {
-        const { value } = getPokemonMatchup(p, stageTypes);
-        if (value > bestVal) { bestVal = value; chosen = p; }
+  log('\u2B50', 'Bonus Slot! Spin to pick the helper.', 'log-item');
+  enqueueSpins([{
+    prompt: '\u2B50 Bonus Slot — Spin to pick!',
+    slices,
+    onResult(idx, slice, next) {
+      let chosen;
+      if (slice.action === 'best') {
+        let bestVal = -1;
+        for (const p of G.party) {
+          const { value } = getPokemonMatchup(p, stageTypes);
+          if (value > bestVal) { bestVal = value; chosen = p; }
+        }
+      } else {
+        chosen = G.party[Math.floor(Math.random() * G.party.length)];
       }
-    } else {
-      chosen = G.party[Math.floor(Math.random() * G.party.length)];
+      G.bonuses.bonusSlot = { ...chosen };
+      log('\u2B50', `Bonus slot: ${chosen.name} for next battle!`, 'log-item');
+      setWheelResult(`Bonus: ${chosen.name}!`);
+      renderAll(); cb(); next();
     }
-    G.bonuses.bonusSlot = { ...chosen };
-    log('\u2B50', `Bonus slot: ${chosen.name}!`, 'log-item');
-    setWheelResult(`Bonus: ${chosen.name}!`);
-    renderAll(); cb();
-  }), 400);
+  }], () => {});
 }
 
 // ── Battle Phase ───────────────────────────────────────────────
@@ -777,7 +926,6 @@ function setupBattlePhase() {
   const kindLabel = { GYM: 'Gym Battle', E4: 'Elite Four', CHAMPION: 'Champion!' }[stage.stageKind] || 'Battle';
   setPhaseLabel(kindLabel, stage.stageName);
   updateSpinQueueLabel();
-  renderAll();
 
   const activeBonuses = [];
   if (G.inventory.TypeShield > 0) {
@@ -787,34 +935,40 @@ function setupBattlePhase() {
   }
   if (G.bonuses.criticalBonus) {
     activeBonuses.push({ label: 'Crit Bonus', category: 'Bonus', value: DATA.balance.criticalBonus });
-    log('\u1F4A5', `Crit bonus active! +${DATA.balance.criticalBonus}%`, 'log-crit');
+    log('\u1F4A5', `Crit bonus! +${DATA.balance.criticalBonus}%`, 'log-crit');
     G.bonuses.criticalBonus = false;
   }
 
   let stageTypes = stage.stageTypes;
   if (stageTypes.includes('Mixed')) {
     const allTypes = Object.keys(DATA.typeChart);
-    stageTypes = [allTypes[Math.floor(Math.random() * allTypes.length)], allTypes[Math.floor(Math.random() * allTypes.length)]];
+    stageTypes = [
+      allTypes[Math.floor(Math.random() * allTypes.length)],
+      allTypes[Math.floor(Math.random() * allTypes.length)]
+    ];
     log('\u1F300', `Champion uses: ${stageTypes.join(' / ')}`, 'log-info');
   }
 
   const battleParty = [...G.party];
   if (G.bonuses.bonusSlot) {
     battleParty.push({ ...G.bonuses.bonusSlot, _isBonus: true });
-    log('\u2B50', `Bonus slot: ${G.bonuses.bonusSlot.name}`, 'log-item');
+    log('\u2B50', `Bonus slot active: ${G.bonuses.bonusSlot.name}`, 'log-item');
   }
 
   const { chance, breakdown } = computeWinChance(battleParty, stageTypes, activeBonuses);
   renderBattleBreakdown(breakdown, chance);
 
   const slices = [
-    { label: 'WIN!', weight: chance },
+    { label: 'WIN!',   weight: chance },
     { label: 'LOSE...', weight: Math.max(1, 100 - chance) },
   ];
-  setWheelResult(`Win chance: ${chance}%`);
+  wheelState.slices = buildWheel(slices);
+  drawWheel(wheelState.slices, wheelState.angle);
+  setWheelResult(`Spin to battle! Win chance: ${chance}%`);
+  setPointerLabel('');
 
   setSpinHandler(() => {
-    log('\u2694', `Battle vs ${stage.stageName} (${chance}% win chance)`, 'log-info');
+    log('\u2694', `Battle vs ${stage.stageName} (${chance}% win)`, 'log-info');
     spinWheel(slices, (idx, slice) => {
       G.bonuses.bonusSlot = null;
       if (slice.label === 'WIN!') {
@@ -835,14 +989,14 @@ function setupBattlePhase() {
 function handleDefeat(stage, stageTypes) {
   if (G.inventory.LuckyCharm > 0) {
     G.inventory.LuckyCharm--;
-    log('\u1F340', 'Lucky Charm used! Rerolling...', 'log-item');
+    log('\u1F340', 'Lucky Charm used! Rerolling battle...', 'log-item');
     renderAll();
-    setTimeout(() => retryBattle(stage, stageTypes, false), 700);
+    retryBattle(stage, stageTypes, false);
   } else if (G.inventory.Potion > 0) {
     G.inventory.Potion--;
-    log('\u1F9EA', 'Potion used! Retrying...', 'log-item');
+    log('\u1F9EA', 'Potion used! Retrying battle...', 'log-item');
     renderAll();
-    setTimeout(() => retryBattle(stage, stageTypes, true), 700);
+    retryBattle(stage, stageTypes, true);
   } else {
     endRun(false, stage.stageName);
   }
@@ -852,14 +1006,15 @@ function retryBattle(stage, stageTypes, usedPotion) {
   const { chance, breakdown } = computeWinChance(G.party, stageTypes, []);
   renderBattleBreakdown(breakdown, chance);
   const slices = [
-    { label: 'WIN!', weight: chance },
+    { label: 'WIN!',   weight: chance },
     { label: 'LOSE...', weight: Math.max(1, 100 - chance) },
   ];
-  setWheelResult(`Retry! ${chance}% win`);
-  log('\u1F504', `Retry battle — ${chance}% win chance`, 'log-info');
+  wheelState.slices = buildWheel(slices);
+  drawWheel(wheelState.slices, wheelState.angle);
+  setWheelResult(`Retry! Win chance: ${chance}%`);
+  setPointerLabel('');
+  log('\u1F504', `Retry — ${chance}% win chance`, 'log-info');
 
-  // re-enable spin so player can see the retry
-  document.getElementById('spinBtn').disabled = false;
   setSpinHandler(() => {
     spinWheel(slices, (idx, slice) => {
       if (slice.label === 'WIN!') {
@@ -868,12 +1023,11 @@ function retryBattle(stage, stageTypes, usedPotion) {
         renderAll();
         advanceStage();
       } else {
-        // Try next item
         if (!usedPotion && G.inventory.Potion > 0) {
           G.inventory.Potion--;
           log('\u1F9EA', 'Potion used! Retrying...', 'log-item');
           renderAll();
-          setTimeout(() => retryBattle(stage, stageTypes, true), 700);
+          retryBattle(stage, stageTypes, true);
         } else {
           endRun(false, stage.stageName);
         }
@@ -884,27 +1038,23 @@ function retryBattle(stage, stageTypes, usedPotion) {
 
 function advanceStage() {
   G.stageIndex++;
-  if (G.stageIndex >= DATA.stages.length) {
-    endRun(true, 'Champion');
-    return;
-  }
+  if (G.stageIndex >= DATA.stages.length) { endRun(true); return; }
   G.phase = 'INTERMISSION';
   G.intermissionSpinsLeft = getIntermissionSpins();
   renderAll();
-  setTimeout(() => setupIntermissionWheel(), 800);
+  setupIntermissionWheel();
 }
 
 function endRun(win, stageName) {
   G.phase = 'END';
   G.runEnded = true;
   renderAll();
-  const overlay = document.getElementById('overlay');
-  overlay.classList.remove('hidden');
+  document.getElementById('overlay').classList.remove('hidden');
   document.getElementById('overlay-title').textContent = win ? '\u1F3C6 CHAMPION!' : '\u1F480 RUN OVER';
   document.getElementById('overlay-msg').textContent = win
     ? `You conquered all of Kanto! Party: ${G.party.map(p=>p.name).join(', ')}`
-    : `Defeated by ${stageName}. Party: ${G.party.map(p=>p.name).join(', ') || 'none'}`;
-  log(win ? '\u1F3C6' : '\u1F480', win ? 'Run complete! Hall of Fame!' : `Run ended at: ${stageName}`, win ? 'log-win' : 'log-lose');
+    : `Defeated by ${stageName || '???'}. Party: ${G.party.map(p=>p.name).join(', ') || 'none'}`;
+  log(win ? '\u1F3C6' : '\u1F480', win ? 'Hall of Fame!' : `Run ended at: ${stageName}`, win ? 'log-win' : 'log-lose');
 }
 
 // ── Render ─────────────────────────────────────────────────────
@@ -925,11 +1075,9 @@ function renderParty() {
       const p = G.party[i];
       slot.classList.add('filled');
       if (p._isBonus) slot.classList.add('bonus');
-
       const nameEl = document.createElement('div');
       nameEl.className = 'slot-name';
       nameEl.textContent = p.name;
-
       const typesEl = document.createElement('div');
       typesEl.className = 'slot-types';
       [p.type1, p.type2].filter(Boolean).forEach(t => {
@@ -938,33 +1086,29 @@ function renderParty() {
         badge.textContent = t;
         typesEl.appendChild(badge);
       });
-
       slot.appendChild(nameEl);
       slot.appendChild(typesEl);
-
       if (G.stageIndex < DATA.stages.length) {
-        const stage = DATA.stages[G.stageIndex];
-        let st = stage.stageTypes.filter(t => t !== 'Mixed');
-        if (st.length === 0) st = ['Normal'];
-        const { category, value } = getPokemonMatchup(p, st);
-        const contEl = document.createElement('div');
-        contEl.className = 'slot-contrib';
-        contEl.textContent = `+${value} (${category[0]})`;
-        slot.appendChild(contEl);
+        const st = DATA.stages[G.stageIndex].stageTypes.filter(t => t !== 'Mixed');
+        if (st.length > 0) {
+          const { category, value } = getPokemonMatchup(p, st);
+          const contEl = document.createElement('div');
+          contEl.className = 'slot-contrib';
+          contEl.textContent = `+${value} (${category[0]})`;
+          slot.appendChild(contEl);
+        }
       }
     } else {
       slot.classList.add('empty');
     }
   });
-
-  // Bonus slot note
   const existing = grid.querySelector('.bonus-note');
   if (existing) existing.remove();
-  if (G.bonuses.bonusSlot) {
+  if (G.bonuses && G.bonuses.bonusSlot) {
     const note = document.createElement('div');
     note.className = 'bonus-note';
     note.style.cssText = 'grid-column:1/-1;padding:4px;font-family:var(--pixel-font);font-size:0.38rem;color:var(--accent2);border-top:1px solid var(--border);margin-top:4px;';
-    note.textContent = `\u2B50 Bonus: ${G.bonuses.bonusSlot.name}`;
+    note.textContent = `\u2B50 Bonus slot: ${G.bonuses.bonusSlot.name}`;
     grid.appendChild(note);
   }
 }
@@ -972,7 +1116,7 @@ function renderParty() {
 function renderInventory() {
   const list = document.getElementById('inventory-list');
   list.innerHTML = '';
-  [['Potion','\u1F9EA','Potion'], ['TypeShield','\u1F6E1','Type Shield'], ['LuckyCharm','\u1F340','Lucky Charm']].forEach(([key, icon, name]) => {
+  [['Potion','\u1F9EA','Potion'],['TypeShield','\u1F6E1','Type Shield'],['LuckyCharm','\u1F340','Lucky Charm']].forEach(([key, icon, name]) => {
     const row = document.createElement('div');
     row.className = 'inv-row';
     row.innerHTML = `<span class="inv-name">${icon} ${name}</span><span class="inv-count">\u00D7${G.inventory[key]}</span>`;
@@ -982,7 +1126,7 @@ function renderInventory() {
   shoes.className = 'inv-row';
   shoes.innerHTML = `<span class="inv-name">\u1F45F Running Shoes</span><span class="inv-permanent">${G.inventory.RunningShoes ? '\u2713 Active' : '\u2014'}</span>`;
   list.appendChild(shoes);
-  if (G.bonuses.criticalBonus) {
+  if (G.bonuses && G.bonuses.criticalBonus) {
     const cb = document.createElement('div');
     cb.className = 'inv-row';
     cb.innerHTML = `<span class="inv-name">\u1F4A5 Crit Bonus</span><span class="inv-permanent">+${DATA.balance.criticalBonus}%</span>`;
@@ -993,13 +1137,12 @@ function renderInventory() {
 function renderStageInfo() {
   const info = document.getElementById('stage-info');
   if (G.stageIndex >= DATA.stages.length) {
-    info.innerHTML = '<strong>\u1F3C6 All stages cleared!</strong>';
-    return;
+    info.innerHTML = '<strong>\u1F3C6 All stages cleared!</strong>'; return;
   }
   const stage = DATA.stages[G.stageIndex];
   info.innerHTML = `
     <div><strong>${stage.stageName}</strong></div>
-    <div>${stage.stageKind} — ${stage.stageTypes.join(' / ')}</div>
+    <div>${stage.stageKind} \u2014 ${stage.stageTypes.join(' / ')}</div>
     ${stage.leader ? `<div>Leader: ${stage.leader}</div>` : ''}
     ${stage.badge ? `<div>Badge: ${stage.badge}</div>` : ''}
     <div style="margin-top:4px;color:var(--text2)">${G.stageIndex + 1} / ${DATA.stages.length}</div>
@@ -1017,10 +1160,10 @@ function renderWinChance() {
   let stageTypes = stage.stageTypes.filter(t => t !== 'Mixed');
   if (stageTypes.length === 0) stageTypes = ['Normal'];
   const battleParty = [...G.party];
-  if (G.bonuses.bonusSlot) battleParty.push({ ...G.bonuses.bonusSlot });
+  if (G.bonuses && G.bonuses.bonusSlot) battleParty.push({ ...G.bonuses.bonusSlot });
   const bonuses = [];
   if (G.inventory.TypeShield > 0) bonuses.push({ label: 'Type Shield', category: 'Shield', value: DATA.balance.typeShieldBonus });
-  if (G.bonuses.criticalBonus) bonuses.push({ label: 'Crit Bonus', category: 'Bonus', value: DATA.balance.criticalBonus });
+  if (G.bonuses && G.bonuses.criticalBonus) bonuses.push({ label: 'Crit Bonus', category: 'Bonus', value: DATA.balance.criticalBonus });
   const { chance, breakdown } = computeWinChance(battleParty, stageTypes, bonuses);
   renderBattleBreakdown(breakdown, chance);
 }
@@ -1039,7 +1182,7 @@ function renderBattleBreakdown(breakdown, chance) {
   document.getElementById('battle-breakdown').innerHTML = html;
 }
 
-// ── Spin Button & Log ──────────────────────────────────────────
+// ── Spin Button ────────────────────────────────────────────────
 let _spinHandler = null;
 
 function setSpinHandler(fn) {
@@ -1075,9 +1218,8 @@ document.getElementById('spinBtn').addEventListener('click', () => {
 
 // ── Dark Mode ──────────────────────────────────────────────────
 document.getElementById('darkModeToggle').addEventListener('click', () => {
-  const html = document.documentElement;
-  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  html.setAttribute('data-theme', next);
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
   document.getElementById('darkModeToggle').textContent = next === 'dark' ? '\u263E' : '\u2600';
   if (wheelState.slices.length > 0) drawWheel(wheelState.slices, wheelState.angle);
 });
@@ -1085,9 +1227,10 @@ document.getElementById('darkModeToggle').addEventListener('click', () => {
 // ── Restart ────────────────────────────────────────────────────
 function doRestart() {
   document.getElementById('overlay').classList.add('hidden');
-  document.getElementById('run-log').innerHTML = '';
   document.getElementById('spinBtn').disabled = false;
   _spinHandler = null;
+  _spinQueue = [];
+  _onQueueDone = null;
   initGame();
 }
 document.getElementById('restartBtn').addEventListener('click', doRestart);
