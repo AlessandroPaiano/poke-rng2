@@ -1,0 +1,56 @@
+{
+  "intermissionWheel": {
+    "Capture": 30,
+    "DoubleCapture": 10,
+    "GuaranteedRareEncounter": 6,
+    "MysteryPokemon": 9,
+    "EvolvePartyPokemon": 12,
+    "TypeShield": 10,
+    "LuckyCharm": 6,
+    "BonusSlotNextBattle": 7,
+    "FindItem": 10
+  },
+  "captureTierWeights": {
+    "Common": 70,
+    "Uncommon": 25,
+    "Rare": 5
+  },
+  "mysteryTierWeights": {
+    "Common": 55,
+    "Uncommon": 35,
+    "Rare": 10
+  },
+  "captureResultWeights": {
+    "Fail": 30,
+    "Success": 60,
+    "Critical": 10
+  },
+  "criticalBonus": 6,
+  "partyFullWheel": {
+    "ReplaceRandom": 40,
+    "ReplaceWorstMatchup": 40,
+    "DiscardNew": 20
+  },
+  "findItemWheel": {
+    "Potion": 45,
+    "TypeShield": 30,
+    "LuckyCharm": 20,
+    "RunningShoes": 5
+  },
+  "intermissionSpins": {
+    "base": 1,
+    "withRunningShoes": 2
+  },
+  "typeShieldBonus": 8,
+  "bonusSlotContribution": 7,
+  "winModel": {
+    "baseChance": 20,
+    "contributions": {
+      "VeryStrong": 12,
+      "Strong": 10,
+      "Neutral": 5,
+      "Resisted": 2
+    },
+    "clamp": [5, 95]
+  }
+}

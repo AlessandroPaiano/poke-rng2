@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gen 1 RNG Gym Run</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- TOP BAR -->
+  <header id="topbar">
+    <div id="title-wrap">
+      <span class="pixel-ball">◉</span>
+      <h1>Gen 1 RNG Gym Run</h1>
+    </div>
+    <div id="top-controls">
+      <button id="darkModeToggle" title="Toggle Dark/Light">☾</button>
+      <button id="restartBtn" title="Restart Run">↺</button>
+    </div>
+  </header>
+
+  <!-- PHASE BANNER -->
+  <div id="phase-banner">
+    <span id="phase-label">Starter Selection</span>
+    <span id="stage-label"></span>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <main id="app">
+    <!-- LEFT: Wheel + Spin -->
+    <section id="wheel-section">
+      <div id="wheel-container">
+        <canvas id="wheel-canvas" width="340" height="340"></canvas>
+        <div id="wheel-pointer">▼</div>
+      </div>
+      <div id="wheel-result-label"></div>
+      <button id="spinBtn" class="spin-btn">SPIN!</button>
+      <div id="spin-queue-label"></div>
+    </section>
+
+    <!-- RIGHT: Info panels -->
+    <aside id="info-section">
+      <!-- PARTY -->
+      <div class="panel" id="party-panel">
+        <h2>Party</h2>
+        <div id="party-grid">
+          <div class="party-slot empty" id="slot-0"></div>
+          <div class="party-slot empty" id="slot-1"></div>
+          <div class="party-slot empty" id="slot-2"></div>
+          <div class="party-slot empty" id="slot-3"></div>
+          <div class="party-slot empty" id="slot-4"></div>
+          <div class="party-slot empty" id="slot-5"></div>
+        </div>
+      </div>
+
+      <!-- BATTLE PANEL -->
+      <div class="panel" id="battle-panel">
+        <h2>Battle Odds</h2>
+        <div id="win-chance-bar-wrap">
+          <div id="win-chance-bar"><span id="win-chance-fill"></span></div>
+          <span id="win-chance-pct">—%</span>
+        </div>
+        <div id="battle-breakdown"></div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div class="panel" id="inventory-panel">
+        <h2>Bag</h2>
+        <div id="inventory-list"></div>
+      </div>
+
+      <!-- STAGE INFO -->
+      <div class="panel" id="stage-panel">
+        <h2>Next Stage</h2>
+        <div id="stage-info"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- RUN LOG -->
+  <section id="log-section">
+    <h2>Run Log</h2>
+    <div id="run-log"></div>
+  </section>
+
+  <!-- OVERLAY for end game -->
+  <div id="overlay" class="hidden">
+    <div id="overlay-content">
+      <h2 id="overlay-title"></h2>
+      <p id="overlay-msg"></p>
+      <button id="overlay-restart">New Run</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

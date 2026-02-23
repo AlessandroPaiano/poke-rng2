@@ -1,0 +1,15 @@
+[
+  {"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge"},
+  {"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge"},
+  {"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge"},
+  {"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge"},
+  {"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge"},
+  {"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge"},
+  {"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge"},
+  {"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge"},
+  {"id":"e4_1","stageName":"Lorelei — Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null},
+  {"id":"e4_2","stageName":"Bruno — Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null},
+  {"id":"e4_3","stageName":"Agatha — Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null},
+  {"id":"e4_4","stageName":"Lance — Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null},
+  {"id":"champion","stageName":"Blue — Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null}
+]
