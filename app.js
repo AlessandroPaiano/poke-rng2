@@ -178,19 +178,218 @@ const INLINE_TYPECHART = {
 };
 
 const INLINE_STAGES = [
-  {"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge"},
-  {"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge"},
-  {"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge"},
-  {"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge"},
-  {"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge"},
-  {"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge"},
-  {"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge"},
-  {"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge"},
-  {"id":"e4_1","stageName":"Lorelei — Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null},
-  {"id":"e4_2","stageName":"Bruno — Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null},
-  {"id":"e4_3","stageName":"Agatha — Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null},
-  {"id":"e4_4","stageName":"Lance — Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null},
-  {"id":"champion","stageName":"Blue — Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null}
+  {
+    "id": "gym1",
+    "stageName": "Brock's Gym",
+    "stageKind": "GYM",
+    "stageTypes": [
+      "Rock"
+    ],
+    "leader": "Brock",
+    "badge": "Boulder Badge",
+    "difficulty": 0,
+    "jitter": {
+      "enabled": false,
+      "min": 0,
+      "max": 0
+    }
+  },
+  {
+    "id": "gym2",
+    "stageName": "Misty's Gym",
+    "stageKind": "GYM",
+    "stageTypes": [
+      "Water"
+    ],
+    "leader": "Misty",
+    "badge": "Cascade Badge",
+    "difficulty": 4,
+    "jitter": {
+      "enabled": false,
+      "min": 0,
+      "max": 0
+    }
+  },
+  {
+    "id": "gym3",
+    "stageName": "Lt. Surge's Gym",
+    "stageKind": "GYM",
+    "stageTypes": [
+      "Electric"
+    ],
+    "leader": "Lt. Surge",
+    "badge": "Thunder Badge",
+    "difficulty": 8,
+    "jitter": {
+      "enabled": false,
+      "min": 0,
+      "max": 0
+    }
+  },
+  {
+    "id": "gym4",
+    "stageName": "Erika's Gym",
+    "stageKind": "GYM",
+    "stageTypes": [
+      "Grass"
+    ],
+    "leader": "Erika",
+    "badge": "Rainbow Badge",
+    "difficulty": 12,
+    "jitter": {
+      "enabled": false,
+      "min": 0,
+      "max": 0
+    }
+  },
+  {
+    "id": "gym5",
+    "stageName": "Koga's Gym",
+    "stageKind": "GYM",
+    "stageTypes": [
+      "Poison"
+    ],
+    "leader": "Koga",
+    "badge": "Soul Badge",
+    "difficulty": 16,
+    "jitter": {
+      "enabled": true,
+      "min": -2,
+      "max": 2
+    }
+  },
+  {
+    "id": "gym6",
+    "stageName": "Sabrina's Gym",
+    "stageKind": "GYM",
+    "stageTypes": [
+      "Psychic"
+    ],
+    "leader": "Sabrina",
+    "badge": "Marsh Badge",
+    "difficulty": 20,
+    "jitter": {
+      "enabled": true,
+      "min": -2,
+      "max": 2
+    }
+  },
+  {
+    "id": "gym7",
+    "stageName": "Blaine's Gym",
+    "stageKind": "GYM",
+    "stageTypes": [
+      "Fire"
+    ],
+    "leader": "Blaine",
+    "badge": "Volcano Badge",
+    "difficulty": 24,
+    "jitter": {
+      "enabled": true,
+      "min": -2,
+      "max": 2
+    }
+  },
+  {
+    "id": "gym8",
+    "stageName": "Giovanni's Gym",
+    "stageKind": "GYM",
+    "stageTypes": [
+      "Ground"
+    ],
+    "leader": "Giovanni",
+    "badge": "Earth Badge",
+    "difficulty": 28,
+    "jitter": {
+      "enabled": true,
+      "min": -2,
+      "max": 2
+    }
+  },
+  {
+    "id": "e4_1",
+    "stageName": "Lorelei \u2014 Elite Four",
+    "stageKind": "E4",
+    "stageTypes": [
+      "Ice",
+      "Water"
+    ],
+    "leader": "Lorelei",
+    "badge": null,
+    "difficulty": 34,
+    "jitter": {
+      "enabled": true,
+      "min": -3,
+      "max": 3
+    }
+  },
+  {
+    "id": "e4_2",
+    "stageName": "Bruno \u2014 Elite Four",
+    "stageKind": "E4",
+    "stageTypes": [
+      "Fighting",
+      "Rock"
+    ],
+    "leader": "Bruno",
+    "badge": null,
+    "difficulty": 38,
+    "jitter": {
+      "enabled": true,
+      "min": -3,
+      "max": 3
+    }
+  },
+  {
+    "id": "e4_3",
+    "stageName": "Agatha \u2014 Elite Four",
+    "stageKind": "E4",
+    "stageTypes": [
+      "Ghost",
+      "Poison"
+    ],
+    "leader": "Agatha",
+    "badge": null,
+    "difficulty": 42,
+    "jitter": {
+      "enabled": true,
+      "min": -3,
+      "max": 3
+    }
+  },
+  {
+    "id": "e4_4",
+    "stageName": "Lance \u2014 Elite Four",
+    "stageKind": "E4",
+    "stageTypes": [
+      "Dragon",
+      "Flying"
+    ],
+    "leader": "Lance",
+    "badge": null,
+    "difficulty": 46,
+    "jitter": {
+      "enabled": true,
+      "min": -3,
+      "max": 3
+    }
+  },
+  {
+    "id": "champion",
+    "stageName": "Blue \u2014 Champion",
+    "stageKind": "CHAMPION",
+    "stageTypes": [
+      "Mixed"
+    ],
+    "leader": "Blue",
+    "badge": null,
+    "difficulty": 50,
+    "jitter": {
+      "enabled": true,
+      "min": -3,
+      "max": 3
+    }
+  }
 ];
 
 const INLINE_BALANCE = {
