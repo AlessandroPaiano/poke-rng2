@@ -4,172 +4,679 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Gen 1 RNG Gym Run</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
   <style>
-:root{
-  --bg:#0f0f1a;--bg2:#161629;--bg3:#1e1e35;--border:#3a3a6e;
-  --accent:#f8e71c;--accent2:#e94040;--accent3:#3ddc84;
-  --text:#e8e8ff;--text2:#9898cc;--panel-bg:#161629;
-  --slot-empty:#1a1a2e;--slot-border:#2a2a4e;
-  --win-bar-bg:#0a0a1a;--win-bar-fill:#3ddc84;
-  --pointer:#f8e71c;--log-bg:#0a0a14;
-  --shadow:0 2px 16px #000a;
-  --pf:'Press Start 2P',monospace;--bf:'VT323',monospace;
+/* ============================================================
+   GEN 1 RNG GYM RUN — Retro Pixel / Dark Mode First
+   ============================================================ */
+
+:root {
+  --bg: #0f0f1a;
+  --bg2: #161629;
+  --bg3: #1e1e35;
+  --border: #3a3a6e;
+  --accent: #f8e71c;
+  --accent2: #e94040;
+  --accent3: #3ddc84;
+  --text: #e8e8ff;
+  --text2: #9898cc;
+  --panel-bg: #161629;
+  --panel-border: #3a3a6e;
+  --slot-empty: #1a1a2e;
+  --slot-border: #2a2a4e;
+  --win-bar-bg: #0a0a1a;
+  --win-bar-fill: #3ddc84;
+  --pointer: #f8e71c;
+  --log-bg: #0a0a14;
+  --shadow: 0 2px 16px #000a;
+  --pixel-font: 'Press Start 2P', monospace;
+  --body-font: 'VT323', monospace;
 }
-[data-theme="light"]{
-  --bg:#e8e8f4;--bg2:#d8d8ec;--bg3:#c8c8dc;--border:#9898cc;
-  --accent:#e87c00;--accent2:#cc1010;--accent3:#1a8a40;
-  --text:#101030;--text2:#404068;--panel-bg:#dcdcf0;
-  --slot-empty:#c8c8dc;--slot-border:#9898cc;
-  --win-bar-bg:#b8b8d0;--win-bar-fill:#1a8a40;
-  --pointer:#e87c00;--log-bg:#d0d0e4;--shadow:0 2px 16px #0004;
+
+[data-theme="light"] {
+  --bg: #e8e8f4;
+  --bg2: #d8d8ec;
+  --bg3: #c8c8dc;
+  --border: #9898cc;
+  --accent: #e87c00;
+  --accent2: #cc1010;
+  --accent3: #1a8a40;
+  --text: #101030;
+  --text2: #404068;
+  --panel-bg: #dcdcf0;
+  --panel-border: #9898cc;
+  --slot-empty: #c8c8dc;
+  --slot-border: #9898cc;
+  --win-bar-bg: #b8b8d0;
+  --win-bar-fill: #1a8a40;
+  --pointer: #e87c00;
+  --log-bg: #d0d0e4;
+  --shadow: 0 2px 16px #0004;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--bf);font-size:1.1rem;min-height:100vh;display:flex;flex-direction:column}
-#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg2);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
-#title-wrap{display:flex;align-items:center;gap:10px}
-.pixel-ball{font-size:1.5rem;color:var(--accent);animation:blink 2s infinite}
-@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.4}}
-#topbar h1{font-family:var(--pf);font-size:clamp(.45rem,2vw,.7rem);color:var(--accent);text-shadow:2px 2px 0 #000,0 0 16px var(--accent);line-height:1.4}
-#top-controls{display:flex;gap:8px}
-#top-controls button{background:var(--bg3);border:2px solid var(--border);color:var(--text);font-family:var(--pf);font-size:.7rem;padding:6px 10px;cursor:pointer;transition:.15s}
-#top-controls button:hover{background:var(--accent);color:#000;border-color:var(--accent)}
-#phase-banner{background:var(--bg3);border-bottom:2px solid var(--border);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-family:var(--pf);font-size:clamp(.4rem,1.5vw,.55rem)}
-#phase-label{color:var(--accent)}
-#stage-label{color:var(--text2);font-size:.8em}
-#app{display:grid;grid-template-columns:1fr;gap:16px;padding:16px;flex:1}
-@media(min-width:700px){#app{grid-template-columns:360px 1fr}}
-#wheel-section{display:flex;flex-direction:column;align-items:center;gap:12px}
-#wheel-container{position:relative;width:340px;height:340px;max-width:100%}
-#wheel-canvas{width:100%;height:100%;border-radius:50%;box-shadow:0 0 32px #0008,0 0 8px var(--accent)44;display:block}
-#wheel-pointer{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:2rem;color:var(--pointer);text-shadow:0 0 8px var(--pointer),2px 2px 0 #000;pointer-events:none;z-index:10}
-#pointer-label{font-family:var(--pf);font-size:clamp(.55rem,2vw,.72rem);color:var(--accent);text-align:center;min-height:1.8em;letter-spacing:1px;text-shadow:0 0 10px var(--accent)99;transition:color .2s}#wheel-result-label{font-family:var(--pf);font-size:clamp(.5rem,2vw,.65rem);color:var(--accent3);text-align:center;min-height:2em;text-shadow:0 0 8px var(--accent3)88}
-.spin-btn{font-family:var(--pf);font-size:clamp(.6rem,2.5vw,.85rem);padding:14px 36px;background:var(--accent);color:#000;border:3px solid #000;cursor:pointer;box-shadow:4px 4px 0 #000;transition:.1s;letter-spacing:2px}
-.spin-btn:hover:not(:disabled){transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
-.spin-btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
-.spin-btn:disabled{background:var(--text2);cursor:not-allowed;box-shadow:2px 2px 0 #000;color:#666}
-#spin-queue-label{font-family:var(--pf);font-size:.5rem;color:var(--text2);text-align:center;min-height:1.5em}
-.panel{background:var(--panel-bg);border:2px solid var(--border);padding:12px;margin-bottom:12px;box-shadow:var(--shadow)}
-.panel h2{font-family:var(--pf);font-size:clamp(.4rem,1.5vw,.55rem);color:var(--accent);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:10px}
-#party-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.party-slot{background:var(--slot-empty);border:2px solid var(--slot-border);padding:8px 4px;text-align:center;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.2s;position:relative}
-.party-slot.empty::after{content:'—';color:var(--slot-border);font-size:1.2rem}
-.party-slot.filled{border-color:var(--accent);background:var(--bg3)}
-.party-slot.filled.bonus{border-color:var(--accent2);border-style:dashed}
-.slot-name{font-family:var(--pf);font-size:.38rem;color:var(--text);line-height:1.5;word-break:break-all}
-.slot-types{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
-.type-badge{font-family:var(--pf);font-size:.28rem;padding:2px 4px;border-radius:2px;text-transform:uppercase}
-.type-Normal{background:#a8a878;color:#000}.type-Fire{background:#f08030;color:#000}.type-Water{background:#6890f0;color:#fff}
-.type-Electric{background:#f8d030;color:#000}.type-Grass{background:#78c850;color:#000}.type-Ice{background:#98d8d8;color:#000}
-.type-Fighting{background:#c03028;color:#fff}.type-Poison{background:#a040a0;color:#fff}.type-Ground{background:#e0c068;color:#000}
-.type-Flying{background:#a890f0;color:#fff}.type-Psychic{background:#f85888;color:#fff}.type-Bug{background:#a8b820;color:#000}
-.type-Rock{background:#b8a038;color:#000}.type-Ghost{background:#705898;color:#fff}.type-Dragon{background:#7038f8;color:#fff}
-.slot-contrib{font-family:var(--pf);font-size:.3rem;color:var(--accent3)}
-#win-chance-bar-wrap{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-#win-chance-bar{flex:1;height:16px;background:var(--win-bar-bg);border:2px solid var(--border);overflow:hidden}
-#win-chance-fill{display:block;height:100%;background:var(--win-bar-fill);width:0%;transition:width .6s ease;box-shadow:0 0 8px var(--accent3)88}
-#win-chance-pct{font-family:var(--pf);font-size:.7rem;color:var(--accent3);min-width:40px}
-#battle-breakdown{font-family:var(--bf);font-size:1rem;line-height:1.5;color:var(--text2)}
-.contrib-row{display:flex;justify-content:space-between;border-bottom:1px dotted var(--border);padding:2px 0}
-.contrib-row span:first-child{color:var(--text)}
-.contrib-vs{color:var(--accent3)}.contrib-bonus{color:var(--accent)}
-#inventory-list{display:flex;flex-direction:column;gap:4px;font-family:var(--bf);font-size:1.1rem}
-.inv-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dotted var(--border);padding:2px 0}
-.inv-count{font-family:var(--pf);font-size:.55rem;color:var(--accent)}
-.inv-permanent{color:var(--accent3);font-size:.85em}
-#stage-info{font-family:var(--bf);font-size:1.15rem;line-height:1.6;color:var(--text2)}
-#stage-info strong{color:var(--text)}
-#log-section{padding:12px 16px;background:var(--log-bg);border-top:2px solid var(--border)}
-#log-section h2{font-family:var(--pf);font-size:.5rem;color:var(--accent);margin-bottom:8px}
-#run-log{max-height:160px;overflow-y:auto;font-family:var(--bf);font-size:1rem;line-height:1.5;color:var(--text2)}
-#run-log::-webkit-scrollbar{width:6px}
-#run-log::-webkit-scrollbar-track{background:var(--bg2)}
-#run-log::-webkit-scrollbar-thumb{background:var(--border)}
-.log-entry{padding:2px 0;border-bottom:1px solid var(--bg3);animation:logIn .3s ease}
-@keyframes logIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
-.log-icon{margin-right:6px}
-.log-win{color:var(--accent3)}.log-lose{color:var(--accent2)}.log-info{color:var(--text2)}
-.log-capture{color:#80c0ff}.log-item{color:var(--accent)}.log-evolve{color:#c080ff}.log-crit{color:var(--accent2)}
-#overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .4s ease}
-#overlay.hidden{display:none}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-#overlay-content{background:var(--bg2);border:3px solid var(--accent);padding:32px 40px;text-align:center;box-shadow:8px 8px 0 #000,0 0 40px var(--accent)44;max-width:90vw}
-#overlay-title{font-family:var(--pf);font-size:clamp(.7rem,3vw,1.1rem);color:var(--accent);margin-bottom:16px;text-shadow:2px 2px 0 #000}
-#overlay-msg{font-family:var(--bf);font-size:1.3rem;color:var(--text2);margin-bottom:24px;line-height:1.6}
-#overlay-restart{font-family:var(--pf);font-size:.65rem;padding:12px 28px;background:var(--accent);color:#000;border:3px solid #000;cursor:pointer;box-shadow:4px 4px 0 #000}
-#overlay-restart:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
-  #spin-popup{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:500;pointer-events:auto;background:#0006;animation:fadeInBg .15s ease}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body-font);
+  font-size: 1.1rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ---- TOP BAR ---- */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+#title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pixel-ball {
+  font-size: 1.5rem;
+  color: var(--accent);
+  animation: blink 2s infinite;
+}
+
+@keyframes blink {
+  0%,49%{opacity:1}50%,100%{opacity:0.4}
+}
+
+#topbar h1 {
+  font-family: var(--pixel-font);
+  font-size: clamp(0.45rem, 2vw, 0.7rem);
+  color: var(--accent);
+  text-shadow: 2px 2px 0 #000, 0 0 16px var(--accent);
+  letter-spacing: 1px;
+  line-height: 1.4;
+}
+
+#top-controls {
+  display: flex;
+  gap: 8px;
+}
+
+#top-controls button {
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: var(--pixel-font);
+  font-size: 0.7rem;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+#top-controls button:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+/* ---- PHASE BANNER ---- */
+#phase-banner {
+  background: var(--bg3);
+  border-bottom: 2px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--pixel-font);
+  font-size: clamp(0.45rem, 1.5vw, 0.6rem);
+}
+
+#phase-label {
+  color: var(--accent);
+}
+
+#stage-label {
+  color: var(--text2);
+  font-size: 0.75em;
+}
+
+/* ---- MAIN LAYOUT ---- */
+#app {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 16px;
+  flex: 1;
+}
+
+@media (min-width: 700px) {
+  #app {
+    grid-template-columns: 360px 1fr;
+  }
+}
+
+/* ---- WHEEL SECTION ---- */
+#wheel-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+#wheel-container {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  max-width: 100%;
+}
+
+#wheel-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: 0 0 32px #0008, 0 0 8px var(--accent)44;
+  display: block;
+}
+
+#wheel-pointer {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  color: var(--pointer);
+  text-shadow: 0 0 8px var(--pointer), 2px 2px 0 #000;
+  pointer-events: none;
+  z-index: 10;
+  filter: drop-shadow(0 2px 4px #000a);
+}
+
+#wheel-result-label {
+  font-family: var(--pixel-font);
+  font-size: clamp(0.5rem, 2vw, 0.65rem);
+  color: var(--accent3);
+  text-align: center;
+  min-height: 2em;
+  text-shadow: 0 0 8px var(--accent3)88;
+}
+
+.spin-btn {
+  font-family: var(--pixel-font);
+  font-size: clamp(0.6rem, 2.5vw, 0.85rem);
+  padding: 14px 36px;
+  background: var(--accent);
+  color: #000;
+  border: 3px solid #000;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #000;
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.spin-btn:hover:not(:disabled) {
+  transform: translate(-2px,-2px);
+  box-shadow: 6px 6px 0 #000;
+}
+
+.spin-btn:active:not(:disabled) {
+  transform: translate(2px,2px);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.spin-btn:disabled {
+  background: var(--text2);
+  cursor: not-allowed;
+  box-shadow: 2px 2px 0 #000;
+  color: #666;
+}
+
+#spin-queue-label {
+  font-family: var(--pixel-font);
+  font-size: 0.5rem;
+  color: var(--text2);
+  text-align: center;
+  min-height: 1.5em;
+}
+
+/* ---- PANELS ---- */
+.panel {
+  background: var(--panel-bg);
+  border: 2px solid var(--panel-border);
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+.panel h2 {
+  font-family: var(--pixel-font);
+  font-size: clamp(0.45rem, 1.5vw, 0.6rem);
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* ---- PARTY GRID ---- */
+#party-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.party-slot {
+  background: var(--slot-empty);
+  border: 2px solid var(--slot-border);
+  padding: 8px 4px;
+  text-align: center;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: var(--body-font);
+  font-size: 0.95rem;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+
+.party-slot.empty::after {
+  content: '—';
+  color: var(--slot-border);
+  font-size: 1.2rem;
+}
+
+.party-slot.filled {
+  border-color: var(--accent);
+  background: var(--bg3);
+}
+
+.party-slot.filled.bonus {
+  border-color: var(--accent2);
+  border-style: dashed;
+}
+
+.slot-name {
+  font-family: var(--pixel-font);
+  font-size: 0.38rem;
+  color: var(--text);
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.slot-types {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.type-badge {
+  font-family: var(--pixel-font);
+  font-size: 0.3rem;
+  padding: 2px 4px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+/* Type colors */
+.type-Normal   { background:#a8a878; color:#000 }
+.type-Fire     { background:#f08030; color:#000 }
+.type-Water    { background:#6890f0; color:#fff }
+.type-Electric { background:#f8d030; color:#000 }
+.type-Grass    { background:#78c850; color:#000 }
+.type-Ice      { background:#98d8d8; color:#000 }
+.type-Fighting { background:#c03028; color:#fff }
+.type-Poison   { background:#a040a0; color:#fff }
+.type-Ground   { background:#e0c068; color:#000 }
+.type-Flying   { background:#a890f0; color:#fff }
+.type-Psychic  { background:#f85888; color:#fff }
+.type-Bug      { background:#a8b820; color:#000 }
+.type-Rock     { background:#b8a038; color:#000 }
+.type-Ghost    { background:#705898; color:#fff }
+.type-Dragon   { background:#7038f8; color:#fff }
+.type-Mixed    { background:#666; color:#fff }
+
+.slot-contrib {
+  font-size: 0.7rem;
+  color: var(--accent3);
+  font-family: var(--pixel-font);
+  font-size: 0.32rem;
+}
+
+/* ---- WIN CHANCE BAR ---- */
+#win-chance-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+#win-chance-bar {
+  flex: 1;
+  height: 16px;
+  background: var(--win-bar-bg);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+#win-chance-fill {
+  display: block;
+  height: 100%;
+  background: var(--win-bar-fill);
+  width: 0%;
+  transition: width 0.6s ease;
+  box-shadow: 0 0 8px var(--accent3)88;
+}
+
+#win-chance-pct {
+  font-family: var(--pixel-font);
+  font-size: 0.7rem;
+  color: var(--accent3);
+  min-width: 40px;
+}
+
+#battle-breakdown {
+  font-family: var(--body-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+#battle-breakdown .contrib-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dotted var(--border);
+  padding: 2px 0;
+}
+
+#battle-breakdown .contrib-row span:first-child {
+  color: var(--text);
+}
+
+.contrib-vs { color: var(--accent3); font-size: 0.85rem; }
+.contrib-bonus { color: var(--accent); }
+
+/* ---- INVENTORY ---- */
+#inventory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--body-font);
+  font-size: 1.1rem;
+}
+
+.inv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dotted var(--border);
+  padding: 2px 0;
+}
+
+.inv-name {
+  color: var(--text);
+}
+
+.inv-count {
+  font-family: var(--pixel-font);
+  font-size: 0.55rem;
+  color: var(--accent);
+}
+
+.inv-permanent {
+  color: var(--accent3);
+  font-size: 0.75em;
+}
+
+/* ---- STAGE INFO ---- */
+#stage-info {
+  font-family: var(--body-font);
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--text2);
+}
+
+#stage-info strong {
+  color: var(--text);
+}
+
+/* ---- RUN LOG ---- */
+#log-section {
+  padding: 12px 16px;
+  background: var(--log-bg);
+  border-top: 2px solid var(--border);
+}
+
+#log-section h2 {
+  font-family: var(--pixel-font);
+  font-size: 0.55rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+#run-log {
+  max-height: 180px;
+  overflow-y: auto;
+  font-family: var(--body-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text2);
+  padding-right: 4px;
+}
+
+#run-log::-webkit-scrollbar { width: 6px; }
+#run-log::-webkit-scrollbar-track { background: var(--bg2); }
+#run-log::-webkit-scrollbar-thumb { background: var(--border); }
+
+.log-entry {
+  padding: 2px 0;
+  border-bottom: 1px solid var(--bg3);
+  animation: logFadeIn 0.3s ease;
+}
+@keyframes logFadeIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+
+.log-entry .log-icon { margin-right: 6px; }
+.log-win  { color: var(--accent3); }
+.log-lose { color: var(--accent2); }
+.log-info { color: var(--text2); }
+.log-capture { color: #80c0ff; }
+.log-item { color: var(--accent); }
+.log-evolve { color: #c080ff; }
+.log-crit { color: var(--accent2); }
+
+/* ---- OVERLAY ---- */
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: #000c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.4s ease;
+}
+
+#overlay.hidden { display: none; }
+
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+#overlay-content {
+  background: var(--bg2);
+  border: 3px solid var(--accent);
+  padding: 32px 40px;
+  text-align: center;
+  box-shadow: 8px 8px 0 #000, 0 0 40px var(--accent)44;
+  max-width: 90vw;
+}
+
+#overlay-title {
+  font-family: var(--pixel-font);
+  font-size: clamp(0.7rem, 3vw, 1.1rem);
+  color: var(--accent);
+  margin-bottom: 16px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+#overlay-msg {
+  font-family: var(--body-font);
+  font-size: 1.3rem;
+  color: var(--text2);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+#overlay-restart {
+  font-family: var(--pixel-font);
+  font-size: 0.65rem;
+  padding: 12px 28px;
+  background: var(--accent);
+  color: #000;
+  border: 3px solid #000;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #000;
+}
+
+#overlay-restart:hover {
+  transform: translate(-2px,-2px);
+  box-shadow: 6px 6px 0 #000;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 699px) {
+  #info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  #party-grid { grid-template-columns: repeat(3,1fr); }
+}
+
+/* ---- SPIN ANIMATION STATE ---- */
+.spinning-indicator {
+  animation: pulse 0.5s infinite alternate;
+}
+@keyframes pulse {
+  from { box-shadow: 0 0 8px var(--accent)44; }
+  to   { box-shadow: 0 0 24px var(--accent)aa; }
+}
+
+/* Wheel canvas glow when spinning */
+.wheel-spinning {
+  animation: wheelGlow 0.3s infinite alternate;
+}
+@keyframes wheelGlow {
+  from { box-shadow: 0 0 32px #0008, 0 0 8px var(--accent)44; }
+  to   { box-shadow: 0 0 32px #0008, 0 0 32px var(--accent)99; }
+}
+
+/* ── Additions ── */
+#pointer-label{font-family:var(--pf,'VT323',monospace);font-size:clamp(.55rem,2vw,.72rem);color:var(--accent,#f8e71c);text-align:center;min-height:1.8em;letter-spacing:1px;text-shadow:0 0 10px var(--accent,#f8e71c)99;transition:color .2s}
+#spin-popup{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:500;background:#0006}
 #spin-popup.hidden{display:none}
-#spin-popup-inner{background:var(--bg2);border:3px solid var(--accent);padding:28px 44px;box-shadow:6px 6px 0 #000,0 0 40px var(--accent)66;text-align:center;animation:popIn .25s cubic-bezier(.34,1.56,.64,1)}
-#spin-popup-label{font-family:var(--pf);font-size:clamp(1rem,5vw,1.6rem);color:var(--accent);text-shadow:2px 2px 0 #000,0 0 16px var(--accent);letter-spacing:2px}
-@keyframes fadeInBg{from{opacity:0}to{opacity:1}}
+#spin-popup-inner{background:var(--bg2,#1a1a2e);border:3px solid var(--accent,#f8e71c);padding:28px 44px;box-shadow:6px 6px 0 #000,0 0 40px var(--accent,#f8e71c)66;text-align:center;animation:popIn .25s cubic-bezier(.34,1.56,.64,1)}
+#spin-popup-label{font-family:var(--pf,'VT323',monospace);font-size:clamp(1rem,5vw,1.6rem);color:var(--accent,#f8e71c);text-shadow:2px 2px 0 #000,0 0 16px var(--accent,#f8e71c);letter-spacing:2px}
 @keyframes popIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
-</style>
+  </style>
 </head>
 <body>
-<header id="topbar">
-  <div id="title-wrap"><span class="pixel-ball">◉</span><h1>Gen 1 RNG Gym Run</h1></div>
-  <div id="top-controls">
-    <button id="darkModeToggle" title="Dark/Light">☾</button>
-    <button id="restartBtn" title="Restart">↺</button>
-  </div>
-</header>
-<div id="phase-banner">
-  <span id="phase-label">Starter Selection</span>
-  <span id="stage-label"></span>
-</div>
-<main id="app">
-  <section id="wheel-section">
-    <div id="wheel-container">
-      <canvas id="wheel-canvas" width="340" height="340"></canvas>
-      <div id="wheel-pointer">▼</div>
+  <header id="topbar">
+    <div id="title-wrap">
+      <span class="pixel-ball">◉</span>
+      <h1>Gen 1 RNG Gym Run</h1>
     </div>
-    <div id="pointer-label"></div>
-    <div id="wheel-result-label">Loading...</div>
-    <button id="spinBtn" class="spin-btn" disabled>SPIN!</button>
-    <div id="spin-queue-label"></div>
+    <div id="top-controls">
+      <button id="darkModeToggle" title="Toggle Dark/Light">☾</button>
+      <button id="restartBtn" title="Restart Run">↺</button>
+    </div>
+  </header>
+
+  <div id="phase-banner">
+    <span id="phase-label">Starter Selection</span>
+    <span id="stage-label"></span>
+  </div>
+
+  <main id="app">
+    <section id="wheel-section">
+      <div id="wheel-container">
+        <canvas id="wheel-canvas" width="340" height="340"></canvas>
+        <div id="wheel-pointer">▼</div>
+      </div>
+      <div id="pointer-label"></div>
+      <div id="wheel-result-label">Loading...</div>
+      <button id="spinBtn" class="spin-btn" disabled>SPIN!</button>
+      <div id="spin-queue-label"></div>
+    </section>
+
+    <aside id="info-section">
+      <div class="panel" id="party-panel">
+        <h2>Party</h2>
+        <div id="party-grid">
+          <div class="party-slot empty" id="slot-0"></div>
+          <div class="party-slot empty" id="slot-1"></div>
+          <div class="party-slot empty" id="slot-2"></div>
+          <div class="party-slot empty" id="slot-3"></div>
+          <div class="party-slot empty" id="slot-4"></div>
+          <div class="party-slot empty" id="slot-5"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="battle-panel">
+        <h2>Battle Odds</h2>
+        <div id="win-chance-bar-wrap">
+          <div id="win-chance-bar"><span id="win-chance-fill"></span></div>
+          <span id="win-chance-pct">—%</span>
+        </div>
+        <div id="battle-breakdown"></div>
+      </div>
+
+      <div class="panel" id="inventory-panel">
+        <h2>Bag</h2>
+        <div id="inventory-list"></div>
+      </div>
+
+      <div class="panel" id="stage-panel">
+        <h2>Next Stage</h2>
+        <div id="stage-info"></div>
+      </div>
+    </aside>
+  </main>
+
+  <section id="log-section">
+    <h2>Run Log</h2>
+    <div id="run-log"></div>
   </section>
-  <aside id="info-section">
-    <div class="panel" id="party-panel">
-      <h2>Party</h2>
-      <div id="party-grid">
-        <div class="party-slot empty" id="slot-0"></div>
-        <div class="party-slot empty" id="slot-1"></div>
-        <div class="party-slot empty" id="slot-2"></div>
-        <div class="party-slot empty" id="slot-3"></div>
-        <div class="party-slot empty" id="slot-4"></div>
-        <div class="party-slot empty" id="slot-5"></div>
-      </div>
+
+  <div id="overlay" class="hidden">
+    <div id="overlay-content">
+      <h2 id="overlay-title"></h2>
+      <p id="overlay-msg"></p>
+      <button id="overlay-restart">New Run</button>
     </div>
-    <div class="panel" id="battle-panel">
-      <h2>Battle Odds</h2>
-      <div id="win-chance-bar-wrap">
-        <div id="win-chance-bar"><span id="win-chance-fill"></span></div>
-        <span id="win-chance-pct">—%</span>
-      </div>
-      <div id="battle-breakdown"></div>
-    </div>
-    <div class="panel" id="inventory-panel">
-      <h2>Bag</h2>
-      <div id="inventory-list"></div>
-    </div>
-    <div class="panel" id="stage-panel">
-      <h2>Next Stage</h2>
-      <div id="stage-info"></div>
-    </div>
-  </aside>
-</main>
-<section id="log-section">
-  <h2>Run Log</h2>
-  <div id="run-log"></div>
-</section>
-<div id="overlay" class="hidden">
-  <div id="overlay-content">
-    <h2 id="overlay-title"></h2>
-    <p id="overlay-msg"></p>
-    <button id="overlay-restart">New Run</button>
   </div>
-</div>
+
+  <div id="spin-popup" class="hidden">
+    <div id="spin-popup-inner">
+      <div id="spin-popup-label"></div>
+    </div>
+  </div>
+
 <script>
 /* ============================================================
    Gen 1 RNG Gym Run — app.js
@@ -350,78 +857,9 @@ const INLINE_TYPECHART = {
   "Dragon":    {"Dragon":2}
 };
 
-const INLINE_STAGES = [
-  {"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge"},
-  {"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge"},
-  {"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge"},
-  {"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge"},
-  {"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge"},
-  {"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge"},
-  {"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge"},
-  {"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge"},
-  {"id":"e4_1","stageName":"Lorelei — Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null},
-  {"id":"e4_2","stageName":"Bruno — Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null},
-  {"id":"e4_3","stageName":"Agatha — Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null},
-  {"id":"e4_4","stageName":"Lance — Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null},
-  {"id":"champion","stageName":"Blue — Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null}
-];
+const INLINE_STAGES = [{"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge","difficulty":0,"jitter":{"enabled":false,"min":0,"max":0}},{"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge","difficulty":4,"jitter":{"enabled":false,"min":0,"max":0}},{"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge","difficulty":8,"jitter":{"enabled":false,"min":0,"max":0}},{"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge","difficulty":12,"jitter":{"enabled":false,"min":0,"max":0}},{"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge","difficulty":16,"jitter":{"enabled":true,"min":-2,"max":2}},{"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge","difficulty":20,"jitter":{"enabled":true,"min":-2,"max":2}},{"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge","difficulty":24,"jitter":{"enabled":true,"min":-2,"max":2}},{"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge","difficulty":28,"jitter":{"enabled":true,"min":-2,"max":2}},{"id":"e4_1","stageName":"Lorelei \u2014 Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null,"difficulty":34,"jitter":{"enabled":true,"min":-3,"max":3}},{"id":"e4_2","stageName":"Bruno \u2014 Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null,"difficulty":38,"jitter":{"enabled":true,"min":-3,"max":3}},{"id":"e4_3","stageName":"Agatha \u2014 Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null,"difficulty":42,"jitter":{"enabled":true,"min":-3,"max":3}},{"id":"e4_4","stageName":"Lance \u2014 Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null,"difficulty":46,"jitter":{"enabled":true,"min":-3,"max":3}},{"id":"champion","stageName":"Blue \u2014 Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null,"difficulty":50,"jitter":{"enabled":true,"min":-3,"max":3}}];
 
-const INLINE_BALANCE = {
-  "intermissionWheel": {
-    "Capture": 30,
-    "DoubleCapture": 10,
-    "GuaranteedRareEncounter": 6,
-    "MysteryPokemon": 9,
-    "EvolvePartyPokemon": 12,
-    "TypeShield": 10,
-    "LuckyCharm": 6,
-    "BonusSlotNextBattle": 7,
-    "FindItem": 10
-  },
-  "captureTierWeights": {
-    "Common": 70,
-    "Uncommon": 25,
-    "Rare": 5
-  },
-  "mysteryTierWeights": {
-    "Common": 55,
-    "Uncommon": 35,
-    "Rare": 10
-  },
-  "captureResultWeights": {
-    "Fail": 30,
-    "Success": 60,
-    "Critical": 10
-  },
-  "criticalBonus": 6,
-  "partyFullWheel": {
-    "ReplaceRandom": 40,
-    "ReplaceWorstMatchup": 40,
-    "DiscardNew": 20
-  },
-  "findItemWheel": {
-    "Potion": 45,
-    "TypeShield": 30,
-    "LuckyCharm": 20,
-    "RunningShoes": 5
-  },
-  "intermissionSpins": {
-    "base": 1,
-    "withRunningShoes": 2
-  },
-  "typeShieldBonus": 8,
-  "bonusSlotContribution": 7,
-  "winModel": {
-    "baseChance": 20,
-    "contributions": {
-      "VeryStrong": 12,
-      "Strong": 10,
-      "Neutral": 5,
-      "Resisted": 2
-    },
-    "clamp": [5, 95]
-  }
-};
+const INLINE_BALANCE = {"intermissionWheel":{"Capture":30,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":12,"TypeShield":10,"LuckyCharm":6,"BonusSlotNextBattle":7,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":45,"TypeShield":30,"LuckyCharm":20,"RunningShoes":5},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"contributionBase":{"veryStrong":36,"strong":30,"neutral":24,"resisted":18},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.13},"statFactor":{"enabled":false,"min":0.85,"max":1.15,"bstMin":200,"bstMax":680},"clampMin":5,"clampMax":95}};
 
 // ── Global State ──────────────────────────────────────────────
 let G = {};
@@ -478,10 +916,19 @@ function buildWheel(slices) {
 function getPointerSlice(slices, angle) {
   if (!slices || slices.length === 0) return null;
   const total = slices.reduce((s, x) => s + x.weight, 0);
-  // Pointer is at top (12 o'clock = canvas angle -PI/2).
-  // Slices are drawn starting at canvas angle (angle - PI/2), going clockwise.
-  // Pointer hits the wheel at 0 offset from draw start, i.e. pointerInWheel = (-angle) mod 2PI.
-  let pointerInWheel = ((-angle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  // "top" in our coordinate: the pointer sits at angle = -(PI/2) + angle relative to draw start
+  // Slices are drawn starting at (angle - PI/2), going clockwise.
+  // The pointer is at the top = angle (- PI/2) in absolute terms.
+  // We need to find which slice contains the pointer position.
+  // Normalize: pointer position within wheel = 0 (start of first slice reference angle)
+  // pointer is at the draw start angle = angle - PI/2
+  // So relative to draw start (angle - PI/2), pointer is at 0.
+  // But we want offset from angle=0 (the draw start of first slice at offset angle - PI/2)
+  // Actually simpler: the pointer is at the top. The wheel's reference angle rotates.
+  // At angle=0, slice[0] starts at -PI/2 (top). So pointer hits slice[0]'s start.
+  // pointer position in "slice space": we need (0 - (angle - PI/2)) mod 2PI = (PI/2 - angle) mod 2PI
+  // = how far into the wheel (clockwise from its start) the pointer sits
+  let pointerInWheel = ((Math.PI / 2 - angle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
   let acc = 0;
   for (const s of slices) {
     const sweep = (s.weight / total) * 2 * Math.PI;
@@ -553,20 +1000,54 @@ function animateSpin(timestamp) {
   const progress = Math.min(elapsed / wheelState.duration, 1);
   wheelState.angle = wheelState.startAngle + (wheelState.targetAngle - wheelState.startAngle) * easeOut(progress);
   drawWheel(wheelState.slices, wheelState.angle);
-
-  // Live pointer label update
-  const current = getPointerSlice(wheelState.slices, wheelState.angle);
-  if (current) setPointerLabel(current.label);
-
+  const cur = getPointerSlice(wheelState.slices, wheelState.angle);
+  if (cur) setPointerLabel(cur.label);
   if (progress < 1) {
     requestAnimationFrame(animateSpin);
   } else {
-    wheelState.angle = wheelState.targetAngle; // snap to exact target, no float drift
+    wheelState.angle = wheelState.targetAngle;
     drawWheel(wheelState.slices, wheelState.angle);
     wheelState.spinning = false;
     canvas.classList.remove('wheel-spinning');
     if (wheelState.onDone) wheelState.onDone();
   }
+}
+
+function getPointerSlice(slices, angle) {
+  if (!slices || slices.length === 0) return null;
+  const total = slices.reduce((s, x) => s + x.weight, 0);
+  // Pointer at top: pointerInWheel = (-angle) mod 2PI
+  let p = ((-angle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  let acc = 0;
+  for (const s of slices) {
+    const sweep = (s.weight / total) * 2 * Math.PI;
+    if (p < acc + sweep) return s;
+    acc += sweep;
+  }
+  return slices[slices.length - 1];
+}
+
+function setPointerLabel(text) {
+  const el = document.getElementById('pointer-label');
+  if (el) el.textContent = text ? '▼  ' + text : '';
+}
+
+function showResultPopup(label, cb) {
+  const popup = document.getElementById('spin-popup');
+  const lbl   = document.getElementById('spin-popup-label');
+  if (!popup || !lbl) { if (cb) cb(); return; }
+  lbl.textContent = label;
+  popup.classList.remove('hidden');
+  let dismissed = false;
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    popup.classList.add('hidden');
+    popup.removeEventListener('click', dismiss);
+    if (cb) cb();
+  }
+  popup.addEventListener('click', dismiss);
+  setTimeout(dismiss, 1400);
 }
 
 function spinWheel(slices, onDone) {
@@ -576,7 +1057,7 @@ function spinWheel(slices, onDone) {
   const built = buildWheel(slices);
   wheelState.slices = built;
 
-  // Pick winner by weight
+  // Pick winner by weighted random
   const total = slices.reduce((s, x) => s + x.weight, 0);
   let r = Math.random() * total;
   let winnerIdx = slices.length - 1;
@@ -585,37 +1066,32 @@ function spinWheel(slices, onDone) {
     if (r <= 0) { winnerIdx = i; break; }
   }
 
-  // Compute final angle so the CENTER of winner slice is exactly under the pointer (top).
-  // getPointerSlice uses: pointerInWheel = (-angle) mod 2PI
-  // We want pointerInWheel = winnerMid (center of winner in slice-space)
-  // So: (-targetAngle) mod 2PI = winnerMid  =>  targetAngle = -winnerMid (mod 2PI)
+  // Target angle: center of winner slice lands at pointer (top)
+  // getPointerSlice: pointerInWheel = (-angle) mod 2PI
+  // We want pointerInWheel = winnerMid => angle = -winnerMid (mod 2PI)
   let accAngle = 0;
   for (let i = 0; i < winnerIdx; i++) accAngle += (slices[i].weight / total) * 2 * Math.PI;
   const winnerMid = accAngle + (slices[winnerIdx].weight / total) * Math.PI;
 
-  const targetNorm = ((-winnerMid) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  const currentNorm = ((wheelState.angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const targetNorm   = ((-winnerMid) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const currentNorm  = ((wheelState.angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
   const spins = 4 + Math.random() * 4;
   let diff = (targetNorm - currentNorm + 2 * Math.PI) % (2 * Math.PI);
   if (diff < 0.05) diff += 2 * Math.PI;
 
   wheelState.targetAngle = wheelState.angle + spins * 2 * Math.PI + diff;
-  wheelState.startAngle = wheelState.angle;
-  wheelState.spinning = true;
-  wheelState.startTime = performance.now();
-  wheelState.duration = 2800 + Math.random() * 1000;
-
+  wheelState.startAngle  = wheelState.angle;
+  wheelState.spinning    = true;
+  wheelState.startTime   = performance.now();
+  wheelState.duration    = 2800 + Math.random() * 1000;
   wheelState.onDone = () => {
-    // Read winner EXCLUSIVELY from the pointer position — single source of truth.
-    // We snap the angle to the exact mathematical target to avoid float drift.
-    wheelState.angle = wheelState.targetAngle;
+    wheelState.angle = wheelState.targetAngle; // snap — no float drift
     const finalSlice = getPointerSlice(built, wheelState.angle);
-    const winner = finalSlice || built[winnerIdx]; // finalSlice should always match winnerIdx
+    const winner = finalSlice || built[winnerIdx];
     const finalIdx = built.indexOf(winner);
     setPointerLabel(winner.label);
     showResultPopup(winner.label, () => onDone(finalIdx, winner));
   };
-
   canvas.classList.add('wheel-spinning');
   requestAnimationFrame(animateSpin);
 }
@@ -625,25 +1101,6 @@ function setPointerLabel(text) {
   document.getElementById('pointer-label').textContent = text ? `▼  ${text}` : '';
 }
 
-function showResultPopup(label, cb) {
-  const popup = document.getElementById('spin-popup');
-  const popupLabel = document.getElementById('spin-popup-label');
-  popupLabel.textContent = label;
-  popup.classList.remove('hidden');
-  popup.classList.add('pop-in');
-  let dismissed = false;
-  function dismiss() {
-    if (dismissed) return;
-    dismissed = true;
-    popup.classList.add('hidden');
-    popup.classList.remove('pop-in');
-    popup.removeEventListener('click', dismiss);
-    if (cb) cb();
-  }
-  popup.addEventListener('click', dismiss);
-  setTimeout(dismiss, 1400);
-}
-
 // ── Type Effectiveness ─────────────────────────────────────────
 function getEffectiveness(attackType, defType) {
   const row = DATA.typeChart[attackType];
@@ -651,7 +1108,14 @@ function getEffectiveness(attackType, defType) {
   return row[defType] ?? 1;
 }
 
-function getPokemonMatchup(pokemon, stageTypes) {
+function getStageContributionMultiplier(stageIndex) {
+  const sm = DATA.balance.winModel.stageContributionMultiplier;
+  const total = DATA.stages.length;
+  const t = total > 1 ? stageIndex / (total - 1) : 0;
+  return sm.multEarly + (sm.multLate - sm.multEarly) * t;
+}
+
+function getPokemonMatchup(pokemon, stageTypes, stageIndex) {
   const pokemonTypes = [pokemon.type1, pokemon.type2].filter(Boolean);
   const filtered = stageTypes.filter(t => t !== 'Mixed');
   let best = 0, superCount = 0;
@@ -662,27 +1126,62 @@ function getPokemonMatchup(pokemon, stageTypes) {
       if (eff >= 2) superCount++;
     }
   }
-  const bal = DATA.balance.winModel.contributions;
-  if (superCount >= 2) return { category: 'VeryStrong', value: bal.VeryStrong };
-  if (best >= 2)       return { category: 'Strong',     value: bal.Strong };
-  if (best >= 1)       return { category: 'Neutral',    value: bal.Neutral };
-  return                      { category: 'Resisted',   value: bal.Resisted };
+
+  const bases = DATA.balance.winModel.contributionBase;
+  let category, baseContrib;
+  if (superCount >= 2) { category = 'VeryStrong'; baseContrib = bases.veryStrong; }
+  else if (best >= 2)  { category = 'Strong';     baseContrib = bases.strong; }
+  else if (best >= 1)  { category = 'Neutral';    baseContrib = bases.neutral; }
+  else                 { category = 'Resisted';   baseContrib = bases.resisted; }
+
+  const mult = (stageIndex !== undefined) ? getStageContributionMultiplier(stageIndex) : 1.0;
+
+  const sf = DATA.balance.winModel.statFactor;
+  let statFactor = 1.0;
+  if (sf && sf.enabled && pokemon.bst) {
+    const norm = Math.max(0, Math.min(1, (pokemon.bst - sf.bstMin) / (sf.bstMax - sf.bstMin)));
+    statFactor = sf.min + (sf.max - sf.min) * norm;
+  }
+
+  const value = Math.max(1, Math.round(baseContrib * statFactor * mult));
+  return { category, baseContrib, mult: +mult.toFixed(3), statFactor: +statFactor.toFixed(3), value };
 }
 
-function computeWinChance(party, stageTypes, bonuses = []) {
-  const bal = DATA.balance.winModel;
-  let chance = bal.baseChance;
+function computeWinChance(party, stageTypes, bonuses = [], stage = null) {
+  const wm = DATA.balance.winModel;
+  const stageIndex = stage ? DATA.stages.indexOf(stage) : 0;
+  let rawChance = wm.baseChance;
   const breakdown = [];
+  let pokemonContribSum = 0;
+
   for (const p of party) {
-    const m = getPokemonMatchup(p, stageTypes);
-    chance += m.value;
-    breakdown.push({ name: p.name, category: m.category, value: m.value, bonus: false });
+    const m = getPokemonMatchup(p, stageTypes, stageIndex);
+    rawChance += m.value;
+    pokemonContribSum += m.value;
+    breakdown.push({ name: p.name, category: m.category, baseContrib: m.baseContrib,
+                     mult: m.mult, statFactor: m.statFactor, value: m.value, kind: 'pokemon' });
   }
+
   for (const b of bonuses) {
-    chance += b.value;
-    breakdown.push({ name: b.label, category: b.category, value: b.value, bonus: true });
+    rawChance += b.value;
+    breakdown.push({ name: b.label, category: b.category, value: b.value, kind: 'bonus' });
   }
-  return { chance: Math.max(bal.clamp[0], Math.min(bal.clamp[1], chance)), breakdown };
+
+  const difficulty = stage ? (stage.difficulty || 0) : 0;
+
+  let jitter = 0;
+  if (stage && stage.jitter && stage.jitter.enabled) {
+    if (G.stageJitter && G.stageJitter[stage.id] !== undefined) {
+      jitter = G.stageJitter[stage.id];
+    } else {
+      const { min, max } = stage.jitter;
+      jitter = Math.round(min + Math.random() * (max - min));
+      if (G.stageJitter) G.stageJitter[stage.id] = jitter;
+    }
+  }
+
+  const finalChance = Math.max(wm.clampMin, Math.min(wm.clampMax, rawChance - difficulty + jitter));
+  return { chance: finalChance, rawChance, pokemonContribSum, difficulty, jitter, breakdown, stageIndex };
 }
 
 // ── Spin Queue — manual player-driven sub-spins ────────────────
@@ -730,6 +1229,7 @@ function initGame() {
     bonuses: { criticalBonus: false, bonusSlot: null },
     intermissionSpinsLeft: 0,
     runEnded: false,
+    stageJitter: {},
   };
   _spinQueue = [];
   _onQueueDone = null;
@@ -1146,8 +1646,9 @@ function setupBattlePhase() {
     log('\u2B50', `Bonus slot active: ${G.bonuses.bonusSlot.name}`, 'log-item');
   }
 
-  const { chance, breakdown } = computeWinChance(battleParty, stageTypes, activeBonuses);
-  renderBattleBreakdown(breakdown, chance);
+  const { chance, rawChance, pokemonContribSum, difficulty, jitter, breakdown } = computeWinChance(battleParty, stageTypes, activeBonuses, stage);
+  renderBattleBreakdown(breakdown, chance, rawChance, difficulty, jitter, pokemonContribSum);
+  log('\u1F4CA', `Raw:${rawChance} (base:${DATA.balance.winModel.baseChance}+poke:${pokemonContribSum}) | Opp:-${difficulty} | Jitter:${jitter>=0?'+':''}${jitter} | Final:${chance}%`, 'log-info');
 
   const slices = [
     { label: 'WIN!',   weight: chance },
@@ -1194,8 +1695,8 @@ function handleDefeat(stage, stageTypes) {
 }
 
 function retryBattle(stage, stageTypes, usedPotion) {
-  const { chance, breakdown } = computeWinChance(G.party, stageTypes, []);
-  renderBattleBreakdown(breakdown, chance);
+  const { chance, rawChance, pokemonContribSum, difficulty, jitter, breakdown } = computeWinChance(G.party, stageTypes, [], stage);
+  renderBattleBreakdown(breakdown, chance, rawChance, difficulty, jitter, pokemonContribSum);
   const slices = [
     { label: 'WIN!',   weight: chance },
     { label: 'LOSE...', weight: Math.max(1, 100 - chance) },
@@ -1355,21 +1856,65 @@ function renderWinChance() {
   const bonuses = [];
   if (G.inventory.TypeShield > 0) bonuses.push({ label: 'Type Shield', category: 'Shield', value: DATA.balance.typeShieldBonus });
   if (G.bonuses && G.bonuses.criticalBonus) bonuses.push({ label: 'Crit Bonus', category: 'Bonus', value: DATA.balance.criticalBonus });
-  const { chance, breakdown } = computeWinChance(battleParty, stageTypes, bonuses);
-  renderBattleBreakdown(breakdown, chance);
+  const { chance, rawChance, pokemonContribSum, difficulty, jitter, breakdown } = computeWinChance(battleParty, stageTypes, bonuses, stage);
+  renderBattleBreakdown(breakdown, chance, rawChance, difficulty, jitter, pokemonContribSum);
 }
 
-function renderBattleBreakdown(breakdown, chance) {
+function renderBattleBreakdown(breakdown, chance, rawChance, difficulty, jitter, pokemonContribSum) {
   document.getElementById('win-chance-pct').textContent = `${chance}%`;
   const fill = document.getElementById('win-chance-fill');
   fill.style.width = `${chance}%`;
   fill.style.background = chance >= 70 ? 'var(--accent3)' : chance >= 40 ? '#f8d030' : 'var(--accent2)';
-  const base = DATA.balance.winModel.baseChance;
-  let html = `<div class="contrib-row"><span>Base</span><span class="contrib-vs">+${base}</span></div>`;
+
+  const wm = DATA.balance.winModel;
+  const catLabel = { VeryStrong: 'Very Strong', Strong: 'Strong', Neutral: 'Neutral', Resisted: 'Resisted' };
+
+  let html = `<div class="contrib-row"><span style="color:var(--text2)">Base chance</span><span class="contrib-vs">+${wm.baseChance}</span></div>`;
+
   for (const row of breakdown) {
-    html += `<div class="contrib-row"><span>${row.name} <small style="color:var(--text2)">(${row.category})</small></span><span class="${row.bonus ? 'contrib-bonus' : 'contrib-vs'}">+${row.value}</span></div>`;
+    if (row.kind === 'pokemon') {
+      const cat   = catLabel[row.category] || row.category;
+      const multP = row.mult !== undefined ? ` \xD7${row.mult}` : '';
+      html += `<div class="contrib-row">
+        <span><b style="color:var(--text)">${row.name}</b>
+          <small style="display:block;color:var(--text2);line-height:1.3">${cat} | base\u00a0${row.baseContrib}${multP}</small>
+        </span>
+        <span class="contrib-vs">+${row.value}</span>
+      </div>`;
+    } else {
+      html += `<div class="contrib-row">
+        <span style="color:var(--accent)">\u2606\u00a0${row.name}</span>
+        <span class="contrib-bonus">+${row.value}</span>
+      </div>`;
+    }
   }
-  html += `<div class="contrib-row" style="font-family:var(--pixel-font);font-size:0.4rem;border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span>Total</span><span>${chance}%</span></div>`;
+
+  if (rawChance !== undefined) {
+    html += `<div class="contrib-row" style="border-top:1px dashed var(--border);margin-top:3px;padding-top:3px">
+      <span style="color:var(--text2)">Raw chance</span><span style="color:var(--text2)">${rawChance}</span>
+    </div>`;
+  }
+
+  if (difficulty !== undefined && difficulty > 0) {
+    html += `<div class="contrib-row">
+      <span style="color:var(--accent2)">\u2694\ufe0f Opponent strength</span>
+      <span style="color:var(--accent2)">\u2212${difficulty}</span>
+    </div>`;
+  }
+
+  if (jitter !== undefined && jitter !== 0) {
+    const s = jitter > 0 ? '+' : '';
+    const c = jitter > 0 ? 'var(--accent3)' : 'var(--accent2)';
+    html += `<div class="contrib-row">
+      <span style="color:${c}">\uD83C\uDFB2 Stage jitter</span>
+      <span style="color:${c}">${s}${jitter}</span>
+    </div>`;
+  }
+
+  html += `<div class="contrib-row" style="font-family:var(--pixel-font);font-size:0.4rem;border-top:2px solid var(--border);margin-top:4px;padding-top:4px;font-weight:bold">
+    <span>Final win %</span><span>${chance}%</span>
+  </div>`;
+
   document.getElementById('battle-breakdown').innerHTML = html;
 }
 
@@ -1428,15 +1973,37 @@ document.getElementById('restartBtn').addEventListener('click', doRestart);
 document.getElementById('overlay-restart').addEventListener('click', doRestart);
 
 // ── Boot ───────────────────────────────────────────────────────
+
+// ── Calibration (dev-only — logs to console on boot) ──────────
+function runCalibration() {
+  const starters = [DATA.dexMap[1], DATA.dexMap[4], DATA.dexMap[7]];
+  function avgContrib(stage, idx) {
+    const types = stage.stageTypes.filter(t => t !== 'Mixed');
+    const resolved = types.length ? types : ['Normal'];
+    return starters.reduce((s, p) => s + getPokemonMatchup(p, resolved, idx).value, 0) / starters.length;
+  }
+  const gym1  = DATA.stages[0];
+  const e4    = DATA.stages[8];
+  const champ = DATA.stages[DATA.stages.length - 1];
+  const avgG1 = avgContrib(gym1,  0);
+  const avgE4 = avgContrib(e4,    8);
+  const avgCh = avgContrib(champ, DATA.stages.length - 1);
+  const wm    = DATA.balance.winModel;
+  console.group('%c[RNG Gym Run] Calibration', 'color:#f8e71c;font-weight:bold');
+  console.log('Avg starter contrib @ Gym 1       (target ~30):', avgG1.toFixed(1));
+  console.log('Avg starter contrib @ E4 Lorelei  (target ~10):', avgE4.toFixed(1));
+  console.log('Avg starter contrib @ Champion      (target ~4):', avgCh.toFixed(1));
+  console.log('multEarly:', wm.stageContributionMultiplier.multEarly, '| multLate:', wm.stageContributionMultiplier.multLate);
+  const ok = Math.abs(avgG1-28)<=6 && Math.abs(avgCh-4)<=3;
+  if (ok) console.log('%cCalibration OK ✓', 'color:#3ddc84');
+  else    console.warn('⚠ Calibration off. Adjust multLate (0.11..0.16) or contributionBase.');
+  console.groupEnd();
+}
+
 loadData();
 initGame();
+runCalibration();
 
 </script>
-<div id="spin-popup" class="hidden">
-  <div id="spin-popup-inner">
-    <div id="spin-popup-label"></div>
-  </div>
-</div>
-
 </body>
 </html>
