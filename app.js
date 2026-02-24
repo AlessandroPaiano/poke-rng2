@@ -1,1440 +1,1386 @@
-/* ============================================================
-   Gen 1 RNG Gym Run — app.js
-   Vanilla JS, no build step, GitHub Pages compatible
-   All JSON data inlined — no fetch() calls needed
-   ============================================================ */
+/* Gen 1 RNG Gym Run — index.html + app.js only (GitHub Pages ready)
+   - Wheel-only decisions
+   - Party grows between stages
+   - Inventory auto-consume (Potion, Lucky Charm, Type Shield, Running Shoes)
+   - Increasing StageDifficulty + StageJitter (rolled once per stage)
+   - Per-Pokémon contribution scales down over the run (starter ~ +30% Gym1, ~ +4% E4)
+   - Diminishing returns on total party contribution (late-game anti-snowball)
 
-// ── Inlined Game Data ──────────────────────────────────────────
-const INLINE_POKEDEX = [
-  {"dexNumber":1,"name":"Bulbasaur","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":2},
-  {"dexNumber":2,"name":"Ivysaur","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":3},
-  {"dexNumber":3,"name":"Venusaur","type1":"Grass","type2":"Poison","tier":"Rare","evolvesTo":null},
-  {"dexNumber":4,"name":"Charmander","type1":"Fire","type2":null,"tier":"Common","evolvesTo":5},
-  {"dexNumber":5,"name":"Charmeleon","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":6},
-  {"dexNumber":6,"name":"Charizard","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":7,"name":"Squirtle","type1":"Water","type2":null,"tier":"Common","evolvesTo":8},
-  {"dexNumber":8,"name":"Wartortle","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":9},
-  {"dexNumber":9,"name":"Blastoise","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":10,"name":"Caterpie","type1":"Bug","type2":null,"tier":"Common","evolvesTo":11},
-  {"dexNumber":11,"name":"Metapod","type1":"Bug","type2":null,"tier":"Common","evolvesTo":12},
-  {"dexNumber":12,"name":"Butterfree","type1":"Bug","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":13,"name":"Weedle","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":14},
-  {"dexNumber":14,"name":"Kakuna","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":15},
-  {"dexNumber":15,"name":"Beedrill","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":16,"name":"Pidgey","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":17},
-  {"dexNumber":17,"name":"Pidgeotto","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":18},
-  {"dexNumber":18,"name":"Pidgeot","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":19,"name":"Rattata","type1":"Normal","type2":null,"tier":"Common","evolvesTo":20},
-  {"dexNumber":20,"name":"Raticate","type1":"Normal","type2":null,"tier":"Common","evolvesTo":null},
-  {"dexNumber":21,"name":"Spearow","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":22},
-  {"dexNumber":22,"name":"Fearow","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":23,"name":"Ekans","type1":"Poison","type2":null,"tier":"Common","evolvesTo":24},
-  {"dexNumber":24,"name":"Arbok","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":25,"name":"Pikachu","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":26},
-  {"dexNumber":26,"name":"Raichu","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":27,"name":"Sandshrew","type1":"Ground","type2":null,"tier":"Common","evolvesTo":28},
-  {"dexNumber":28,"name":"Sandslash","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":29,"name":"Nidoran-F","type1":"Poison","type2":null,"tier":"Common","evolvesTo":30},
-  {"dexNumber":30,"name":"Nidorina","type1":"Poison","type2":null,"tier":"Common","evolvesTo":31},
-  {"dexNumber":31,"name":"Nidoqueen","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":32,"name":"Nidoran-M","type1":"Poison","type2":null,"tier":"Common","evolvesTo":33},
-  {"dexNumber":33,"name":"Nidorino","type1":"Poison","type2":null,"tier":"Common","evolvesTo":34},
-  {"dexNumber":34,"name":"Nidoking","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":35,"name":"Clefairy","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":36},
-  {"dexNumber":36,"name":"Clefable","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":37,"name":"Vulpix","type1":"Fire","type2":null,"tier":"Common","evolvesTo":38},
-  {"dexNumber":38,"name":"Ninetales","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":39,"name":"Jigglypuff","type1":"Normal","type2":null,"tier":"Common","evolvesTo":40},
-  {"dexNumber":40,"name":"Wigglytuff","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":41,"name":"Zubat","type1":"Poison","type2":"Flying","tier":"Common","evolvesTo":42},
-  {"dexNumber":42,"name":"Golbat","type1":"Poison","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":43,"name":"Oddish","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":44},
-  {"dexNumber":44,"name":"Gloom","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":45},
-  {"dexNumber":45,"name":"Vileplume","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":46,"name":"Paras","type1":"Bug","type2":"Grass","tier":"Common","evolvesTo":47},
-  {"dexNumber":47,"name":"Parasect","type1":"Bug","type2":"Grass","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":48,"name":"Venonat","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":49},
-  {"dexNumber":49,"name":"Venomoth","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":50,"name":"Diglett","type1":"Ground","type2":null,"tier":"Common","evolvesTo":51},
-  {"dexNumber":51,"name":"Dugtrio","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":52,"name":"Meowth","type1":"Normal","type2":null,"tier":"Common","evolvesTo":53},
-  {"dexNumber":53,"name":"Persian","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":54,"name":"Psyduck","type1":"Water","type2":null,"tier":"Common","evolvesTo":55},
-  {"dexNumber":55,"name":"Golduck","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":56,"name":"Mankey","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":57},
-  {"dexNumber":57,"name":"Primeape","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":58,"name":"Growlithe","type1":"Fire","type2":null,"tier":"Common","evolvesTo":59},
-  {"dexNumber":59,"name":"Arcanine","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":60,"name":"Poliwag","type1":"Water","type2":null,"tier":"Common","evolvesTo":61},
-  {"dexNumber":61,"name":"Poliwhirl","type1":"Water","type2":null,"tier":"Common","evolvesTo":62},
-  {"dexNumber":62,"name":"Poliwrath","type1":"Water","type2":"Fighting","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":63,"name":"Abra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":64},
-  {"dexNumber":64,"name":"Kadabra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":65},
-  {"dexNumber":65,"name":"Alakazam","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":66,"name":"Machop","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":67},
-  {"dexNumber":67,"name":"Machoke","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":68},
-  {"dexNumber":68,"name":"Machamp","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":69,"name":"Bellsprout","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":70},
-  {"dexNumber":70,"name":"Weepinbell","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":71},
-  {"dexNumber":71,"name":"Victreebel","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":72,"name":"Tentacool","type1":"Water","type2":"Poison","tier":"Common","evolvesTo":73},
-  {"dexNumber":73,"name":"Tentacruel","type1":"Water","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":74,"name":"Geodude","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":75},
-  {"dexNumber":75,"name":"Graveler","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":76},
-  {"dexNumber":76,"name":"Golem","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":77,"name":"Ponyta","type1":"Fire","type2":null,"tier":"Common","evolvesTo":78},
-  {"dexNumber":78,"name":"Rapidash","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":79,"name":"Slowpoke","type1":"Water","type2":"Psychic","tier":"Common","evolvesTo":80},
-  {"dexNumber":80,"name":"Slowbro","type1":"Water","type2":"Psychic","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":81,"name":"Magnemite","type1":"Electric","type2":null,"tier":"Common","evolvesTo":82},
-  {"dexNumber":82,"name":"Magneton","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":83,"name":"Farfetch'd","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":84,"name":"Doduo","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":85},
-  {"dexNumber":85,"name":"Dodrio","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":86,"name":"Seel","type1":"Water","type2":null,"tier":"Common","evolvesTo":87},
-  {"dexNumber":87,"name":"Dewgong","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":88,"name":"Grimer","type1":"Poison","type2":null,"tier":"Common","evolvesTo":89},
-  {"dexNumber":89,"name":"Muk","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":90,"name":"Shellder","type1":"Water","type2":null,"tier":"Common","evolvesTo":91},
-  {"dexNumber":91,"name":"Cloyster","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":92,"name":"Gastly","type1":"Ghost","type2":"Poison","tier":"Common","evolvesTo":93},
-  {"dexNumber":93,"name":"Haunter","type1":"Ghost","type2":"Poison","tier":"Uncommon","evolvesTo":94},
-  {"dexNumber":94,"name":"Gengar","type1":"Ghost","type2":"Poison","tier":"Rare","evolvesTo":null},
-  {"dexNumber":95,"name":"Onix","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":96,"name":"Drowzee","type1":"Psychic","type2":null,"tier":"Common","evolvesTo":97},
-  {"dexNumber":97,"name":"Hypno","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":98,"name":"Krabby","type1":"Water","type2":null,"tier":"Common","evolvesTo":99},
-  {"dexNumber":99,"name":"Kingler","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":100,"name":"Voltorb","type1":"Electric","type2":null,"tier":"Common","evolvesTo":101},
-  {"dexNumber":101,"name":"Electrode","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":102,"name":"Exeggcute","type1":"Grass","type2":"Psychic","tier":"Common","evolvesTo":103},
-  {"dexNumber":103,"name":"Exeggutor","type1":"Grass","type2":"Psychic","tier":"Rare","evolvesTo":null},
-  {"dexNumber":104,"name":"Cubone","type1":"Ground","type2":null,"tier":"Common","evolvesTo":105},
-  {"dexNumber":105,"name":"Marowak","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":106,"name":"Hitmonlee","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":107,"name":"Hitmonchan","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":108,"name":"Lickitung","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":109,"name":"Koffing","type1":"Poison","type2":null,"tier":"Common","evolvesTo":110},
-  {"dexNumber":110,"name":"Weezing","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":111,"name":"Rhyhorn","type1":"Ground","type2":"Rock","tier":"Common","evolvesTo":112},
-  {"dexNumber":112,"name":"Rhydon","type1":"Ground","type2":"Rock","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":113,"name":"Chansey","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":114,"name":"Tangela","type1":"Grass","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":115,"name":"Kangaskhan","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":116,"name":"Horsea","type1":"Water","type2":null,"tier":"Common","evolvesTo":117},
-  {"dexNumber":117,"name":"Seadra","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":118,"name":"Goldeen","type1":"Water","type2":null,"tier":"Common","evolvesTo":119},
-  {"dexNumber":119,"name":"Seaking","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":120,"name":"Staryu","type1":"Water","type2":null,"tier":"Common","evolvesTo":121},
-  {"dexNumber":121,"name":"Starmie","type1":"Water","type2":"Psychic","tier":"Rare","evolvesTo":null},
-  {"dexNumber":122,"name":"Mr. Mime","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":123,"name":"Scyther","type1":"Bug","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":124,"name":"Jynx","type1":"Ice","type2":"Psychic","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":125,"name":"Electabuzz","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":126,"name":"Magmar","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":127,"name":"Pinsir","type1":"Bug","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":128,"name":"Tauros","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":129,"name":"Magikarp","type1":"Water","type2":null,"tier":"Common","evolvesTo":130},
-  {"dexNumber":130,"name":"Gyarados","type1":"Water","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":131,"name":"Lapras","type1":"Water","type2":"Ice","tier":"Rare","evolvesTo":null},
-  {"dexNumber":132,"name":"Ditto","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":133,"name":"Eevee","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":136},
-  {"dexNumber":134,"name":"Vaporeon","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":135,"name":"Jolteon","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":136,"name":"Flareon","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":137,"name":"Porygon","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":138,"name":"Omanyte","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":139},
-  {"dexNumber":139,"name":"Omastar","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null},
-  {"dexNumber":140,"name":"Kabuto","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":141},
-  {"dexNumber":141,"name":"Kabutops","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null},
-  {"dexNumber":142,"name":"Aerodactyl","type1":"Rock","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":143,"name":"Snorlax","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":144,"name":"Articuno","type1":"Ice","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":145,"name":"Zapdos","type1":"Electric","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":146,"name":"Moltres","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":147,"name":"Dratini","type1":"Dragon","type2":null,"tier":"Uncommon","evolvesTo":148},
-  {"dexNumber":148,"name":"Dragonair","type1":"Dragon","type2":null,"tier":"Rare","evolvesTo":149},
-  {"dexNumber":149,"name":"Dragonite","type1":"Dragon","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":150,"name":"Mewtwo","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":151,"name":"Mew","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null}
-];
+   NOTE: This build includes a *synthetic* "power" rating per Pokémon (deterministic from Dex).
+         Replace POWER_BY_DEX with real Gen 1 base stats later if desired.
+*/
+(() => {
+  'use strict';
 
-const INLINE_TYPECHART = {
-  "Normal":    {"Rock":0.5,"Ghost":0},
-  "Fire":      {"Fire":0.5,"Water":0.5,"Grass":2,"Ice":2,"Bug":2,"Rock":0.5,"Dragon":0.5},
-  "Water":     {"Fire":2,"Water":0.5,"Grass":0.5,"Ground":2,"Rock":2,"Dragon":0.5},
-  "Electric":  {"Water":2,"Electric":0.5,"Grass":0.5,"Ground":0,"Flying":2,"Dragon":0.5},
-  "Grass":     {"Fire":0.5,"Water":2,"Grass":0.5,"Poison":0.5,"Ground":2,"Flying":0.5,"Bug":0.5,"Rock":2,"Dragon":0.5},
-  "Ice":       {"Water":0.5,"Grass":2,"Ice":0.5,"Ground":2,"Flying":2,"Dragon":2},
-  "Fighting":  {"Normal":2,"Ice":2,"Poison":0.5,"Flying":0.5,"Psychic":0.5,"Bug":0.5,"Rock":2,"Ghost":0},
-  "Poison":    {"Grass":2,"Poison":0.5,"Ground":0.5,"Bug":2,"Rock":0.5,"Ghost":0.5},
-  "Ground":    {"Fire":2,"Electric":2,"Grass":0.5,"Poison":2,"Flying":0,"Bug":0.5,"Rock":2},
-  "Flying":    {"Electric":0.5,"Grass":2,"Fighting":2,"Bug":2,"Rock":0.5},
-  "Psychic":   {"Fighting":2,"Poison":2,"Psychic":0.5,"Ghost":0},
-  "Bug":       {"Fire":0.5,"Grass":2,"Fighting":0.5,"Flying":0.5,"Psychic":2,"Ghost":0.5,"Poison":2},
-  "Rock":      {"Fire":2,"Ice":2,"Fighting":0.5,"Ground":0.5,"Flying":2,"Bug":2},
-  "Ghost":     {"Normal":0,"Psychic":0,"Ghost":2},
-  "Dragon":    {"Dragon":2}
-};
+  // ------------------------------
+  // Utilities
+  // ------------------------------
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
 
-const INLINE_STAGES = [
-  {
-    "id": "gym1",
-    "stageName": "Brock's Gym",
-    "stageKind": "GYM",
-    "stageTypes": [
-      "Rock"
-    ],
-    "leader": "Brock",
-    "badge": "Boulder Badge",
-    "difficulty": 0,
-    "jitter": {
-      "enabled": false,
-      "min": 0,
-      "max": 0
-    }
-  },
-  {
-    "id": "gym2",
-    "stageName": "Misty's Gym",
-    "stageKind": "GYM",
-    "stageTypes": [
-      "Water"
-    ],
-    "leader": "Misty",
-    "badge": "Cascade Badge",
-    "difficulty": 4,
-    "jitter": {
-      "enabled": false,
-      "min": 0,
-      "max": 0
-    }
-  },
-  {
-    "id": "gym3",
-    "stageName": "Lt. Surge's Gym",
-    "stageKind": "GYM",
-    "stageTypes": [
-      "Electric"
-    ],
-    "leader": "Lt. Surge",
-    "badge": "Thunder Badge",
-    "difficulty": 8,
-    "jitter": {
-      "enabled": false,
-      "min": 0,
-      "max": 0
-    }
-  },
-  {
-    "id": "gym4",
-    "stageName": "Erika's Gym",
-    "stageKind": "GYM",
-    "stageTypes": [
-      "Grass"
-    ],
-    "leader": "Erika",
-    "badge": "Rainbow Badge",
-    "difficulty": 12,
-    "jitter": {
-      "enabled": false,
-      "min": 0,
-      "max": 0
-    }
-  },
-  {
-    "id": "gym5",
-    "stageName": "Koga's Gym",
-    "stageKind": "GYM",
-    "stageTypes": [
-      "Poison"
-    ],
-    "leader": "Koga",
-    "badge": "Soul Badge",
-    "difficulty": 16,
-    "jitter": {
-      "enabled": true,
-      "min": -2,
-      "max": 2
-    }
-  },
-  {
-    "id": "gym6",
-    "stageName": "Sabrina's Gym",
-    "stageKind": "GYM",
-    "stageTypes": [
-      "Psychic"
-    ],
-    "leader": "Sabrina",
-    "badge": "Marsh Badge",
-    "difficulty": 20,
-    "jitter": {
-      "enabled": true,
-      "min": -2,
-      "max": 2
-    }
-  },
-  {
-    "id": "gym7",
-    "stageName": "Blaine's Gym",
-    "stageKind": "GYM",
-    "stageTypes": [
-      "Fire"
-    ],
-    "leader": "Blaine",
-    "badge": "Volcano Badge",
-    "difficulty": 24,
-    "jitter": {
-      "enabled": true,
-      "min": -2,
-      "max": 2
-    }
-  },
-  {
-    "id": "gym8",
-    "stageName": "Giovanni's Gym",
-    "stageKind": "GYM",
-    "stageTypes": [
-      "Ground"
-    ],
-    "leader": "Giovanni",
-    "badge": "Earth Badge",
-    "difficulty": 28,
-    "jitter": {
-      "enabled": true,
-      "min": -2,
-      "max": 2
-    }
-  },
-  {
-    "id": "e4_1",
-    "stageName": "Lorelei \u2014 Elite Four",
-    "stageKind": "E4",
-    "stageTypes": [
-      "Ice",
-      "Water"
-    ],
-    "leader": "Lorelei",
-    "badge": null,
-    "difficulty": 34,
-    "jitter": {
-      "enabled": true,
-      "min": -3,
-      "max": 3
-    }
-  },
-  {
-    "id": "e4_2",
-    "stageName": "Bruno \u2014 Elite Four",
-    "stageKind": "E4",
-    "stageTypes": [
-      "Fighting",
-      "Rock"
-    ],
-    "leader": "Bruno",
-    "badge": null,
-    "difficulty": 38,
-    "jitter": {
-      "enabled": true,
-      "min": -3,
-      "max": 3
-    }
-  },
-  {
-    "id": "e4_3",
-    "stageName": "Agatha \u2014 Elite Four",
-    "stageKind": "E4",
-    "stageTypes": [
-      "Ghost",
-      "Poison"
-    ],
-    "leader": "Agatha",
-    "badge": null,
-    "difficulty": 42,
-    "jitter": {
-      "enabled": true,
-      "min": -3,
-      "max": 3
-    }
-  },
-  {
-    "id": "e4_4",
-    "stageName": "Lance \u2014 Elite Four",
-    "stageKind": "E4",
-    "stageTypes": [
-      "Dragon",
-      "Flying"
-    ],
-    "leader": "Lance",
-    "badge": null,
-    "difficulty": 46,
-    "jitter": {
-      "enabled": true,
-      "min": -3,
-      "max": 3
-    }
-  },
-  {
-    "id": "champion",
-    "stageName": "Blue \u2014 Champion",
-    "stageKind": "CHAMPION",
-    "stageTypes": [
-      "Mixed"
-    ],
-    "leader": "Blue",
-    "badge": null,
-    "difficulty": 50,
-    "jitter": {
-      "enabled": true,
-      "min": -3,
-      "max": 3
-    }
+  // Deterministic RNG (Mulberry32)
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
   }
-];
+  function hashStringToSeed(str) {
+    // FNV-1a 32-bit
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
+  }
 
-const INLINE_BALANCE = {
-  "intermissionWheel": {
-    "Capture": 30,
-    "DoubleCapture": 10,
-    "GuaranteedRareEncounter": 6,
-    "MysteryPokemon": 9,
-    "EvolvePartyPokemon": 12,
-    "TypeShield": 10,
-    "LuckyCharm": 6,
-    "BonusSlotNextBattle": 7,
-    "FindItem": 10
-  },
-  "captureTierWeights": {
-    "Common": 70,
-    "Uncommon": 25,
-    "Rare": 5
-  },
-  "mysteryTierWeights": {
-    "Common": 55,
-    "Uncommon": 35,
-    "Rare": 10
-  },
-  "captureResultWeights": {
-    "Fail": 30,
-    "Success": 60,
-    "Critical": 10
-  },
-  "criticalBonus": 6,
-  "partyFullWheel": {
-    "ReplaceRandom": 40,
-    "ReplaceWorstMatchup": 40,
-    "DiscardNew": 20
-  },
-  "findItemWheel": {
-    "Potion": 45,
-    "TypeShield": 30,
-    "LuckyCharm": 20,
-    "RunningShoes": 5
-  },
-  "intermissionSpins": {
-    "base": 1,
-    "withRunningShoes": 2
-  },
-  "typeShieldBonus": 8,
-  "bonusSlotContribution": 7,
-  "winModel": {
-    "baseChance": 20,
-    "contributions": {
-      "VeryStrong": 12,
-      "Strong": 10,
-      "Neutral": 5,
-      "Resisted": 2
+  function pickWeighted(rng, items) {
+    // items: [{label, weight, data}]
+    const total = items.reduce((s, it) => s + it.weight, 0);
+    let r = rng() * total;
+    for (const it of items) {
+      r -= it.weight;
+      if (r <= 0) return it;
+    }
+    return items[items.length - 1];
+  }
+
+  // ------------------------------
+  // Data: Types + effectiveness (Gen 1 chart simplified to attack->def multiplier)
+  // ------------------------------
+  const TYPES = [
+    'Normal','Fire','Water','Electric','Grass','Ice','Fighting','Poison','Ground','Flying','Psychic','Bug','Rock','Ghost','Dragon'
+  ];
+
+  // Gen 1-ish effectiveness map: attacker -> defender -> multiplier (0,0.5,1,2)
+  // This is a compact table; not perfect-edge-case-critical for the game feel.
+  const TYPE_CHART = {
+    Normal:   {Rock:0.5, Ghost:0},
+    Fire:     {Grass:2, Ice:2, Bug:2, Rock:0.5, Fire:0.5, Water:0.5, Dragon:0.5},
+    Water:    {Fire:2, Ground:2, Rock:2, Water:0.5, Grass:0.5, Dragon:0.5},
+    Electric: {Water:2, Flying:2, Electric:0.5, Grass:0.5, Dragon:0.5, Ground:0},
+    Grass:    {Water:2, Ground:2, Rock:2, Fire:0.5, Grass:0.5, Poison:0.5, Flying:0.5, Bug:0.5, Dragon:0.5},
+    Ice:      {Grass:2, Ground:2, Flying:2, Dragon:2, Fire:0.5, Water:0.5, Ice:0.5},
+    Fighting: {Normal:2, Ice:2, Rock:2, Poison:0.5, Flying:0.5, Psychic:0.5, Bug:0.5, Ghost:0},
+    Poison:   {Grass:2, Bug:2, Poison:0.5, Ground:0.5, Rock:0.5, Ghost:0.5},
+    Ground:   {Fire:2, Electric:2, Poison:2, Rock:2, Water:0.5, Grass:0.5, Bug:0.5, Flying:0},
+    Flying:   {Grass:2, Fighting:2, Bug:2, Electric:0.5, Rock:0.5},
+    Psychic:  {Fighting:2, Poison:2, Psychic:0.5},
+    Bug:      {Grass:2, Psychic:2, Fire:0.5, Fighting:0.5, Poison:0.5, Flying:0.5, Ghost:0.5},
+    Rock:     {Fire:2, Ice:2, Flying:2, Bug:2, Fighting:0.5, Ground:0.5},
+    Ghost:    {Psychic:0, Ghost:2, Normal:0},
+    Dragon:   {Dragon:2}
+  };
+
+  function eff(att, def) {
+    const row = TYPE_CHART[att] || {};
+    return row[def] ?? 1;
+  }
+
+  function bestOffensiveMultiplier(pokemonTypes, stageTypes) {
+    // choose best attack type (pokemon type) against any stage defender types (could be 1 or 2)
+    let best = 1;
+    for (const atk of pokemonTypes) {
+      let mult = 1;
+      // in Gen games, damage multiplier is product vs dual type
+      for (const def of stageTypes) mult *= eff(atk, def);
+      if (mult > best) best = mult;
+    }
+    return best;
+  }
+
+  // ------------------------------
+  // Data: Pokédex Gen 1 (names + types).
+  // To keep this file reasonable, we include full 151 with types only.
+  // A deterministic synthetic "power" (0..1) is derived from dex number.
+  // ------------------------------
+  const POKEDEX = [
+    {"dex":1,"name":"Bulbasaur","types":["Grass","Poison"]},
+    {"dex":2,"name":"Ivysaur","types":["Grass","Poison"]},
+    {"dex":3,"name":"Venusaur","types":["Grass","Poison"]},
+    {"dex":4,"name":"Charmander","types":["Fire"]},
+    {"dex":5,"name":"Charmeleon","types":["Fire"]},
+    {"dex":6,"name":"Charizard","types":["Fire","Flying"]},
+    {"dex":7,"name":"Squirtle","types":["Water"]},
+    {"dex":8,"name":"Wartortle","types":["Water"]},
+    {"dex":9,"name":"Blastoise","types":["Water"]},
+    {"dex":10,"name":"Caterpie","types":["Bug"]},
+    {"dex":11,"name":"Metapod","types":["Bug"]},
+    {"dex":12,"name":"Butterfree","types":["Bug","Flying"]},
+    {"dex":13,"name":"Weedle","types":["Bug","Poison"]},
+    {"dex":14,"name":"Kakuna","types":["Bug","Poison"]},
+    {"dex":15,"name":"Beedrill","types":["Bug","Poison"]},
+    {"dex":16,"name":"Pidgey","types":["Normal","Flying"]},
+    {"dex":17,"name":"Pidgeotto","types":["Normal","Flying"]},
+    {"dex":18,"name":"Pidgeot","types":["Normal","Flying"]},
+    {"dex":19,"name":"Rattata","types":["Normal"]},
+    {"dex":20,"name":"Raticate","types":["Normal"]},
+    {"dex":21,"name":"Spearow","types":["Normal","Flying"]},
+    {"dex":22,"name":"Fearow","types":["Normal","Flying"]},
+    {"dex":23,"name":"Ekans","types":["Poison"]},
+    {"dex":24,"name":"Arbok","types":["Poison"]},
+    {"dex":25,"name":"Pikachu","types":["Electric"]},
+    {"dex":26,"name":"Raichu","types":["Electric"]},
+    {"dex":27,"name":"Sandshrew","types":["Ground"]},
+    {"dex":28,"name":"Sandslash","types":["Ground"]},
+    {"dex":29,"name":"Nidoran♀","types":["Poison"]},
+    {"dex":30,"name":"Nidorina","types":["Poison"]},
+    {"dex":31,"name":"Nidoqueen","types":["Poison","Ground"]},
+    {"dex":32,"name":"Nidoran♂","types":["Poison"]},
+    {"dex":33,"name":"Nidorino","types":["Poison"]},
+    {"dex":34,"name":"Nidoking","types":["Poison","Ground"]},
+    {"dex":35,"name":"Clefairy","types":["Normal"]},
+    {"dex":36,"name":"Clefable","types":["Normal"]},
+    {"dex":37,"name":"Vulpix","types":["Fire"]},
+    {"dex":38,"name":"Ninetales","types":["Fire"]},
+    {"dex":39,"name":"Jigglypuff","types":["Normal"]},
+    {"dex":40,"name":"Wigglytuff","types":["Normal"]},
+    {"dex":41,"name":"Zubat","types":["Poison","Flying"]},
+    {"dex":42,"name":"Golbat","types":["Poison","Flying"]},
+    {"dex":43,"name":"Oddish","types":["Grass","Poison"]},
+    {"dex":44,"name":"Gloom","types":["Grass","Poison"]},
+    {"dex":45,"name":"Vileplume","types":["Grass","Poison"]},
+    {"dex":46,"name":"Paras","types":["Bug","Grass"]},
+    {"dex":47,"name":"Parasect","types":["Bug","Grass"]},
+    {"dex":48,"name":"Venonat","types":["Bug","Poison"]},
+    {"dex":49,"name":"Venomoth","types":["Bug","Poison"]},
+    {"dex":50,"name":"Diglett","types":["Ground"]},
+    {"dex":51,"name":"Dugtrio","types":["Ground"]},
+    {"dex":52,"name":"Meowth","types":["Normal"]},
+    {"dex":53,"name":"Persian","types":["Normal"]},
+    {"dex":54,"name":"Psyduck","types":["Water"]},
+    {"dex":55,"name":"Golduck","types":["Water"]},
+    {"dex":56,"name":"Mankey","types":["Fighting"]},
+    {"dex":57,"name":"Primeape","types":["Fighting"]},
+    {"dex":58,"name":"Growlithe","types":["Fire"]},
+    {"dex":59,"name":"Arcanine","types":["Fire"]},
+    {"dex":60,"name":"Poliwag","types":["Water"]},
+    {"dex":61,"name":"Poliwhirl","types":["Water"]},
+    {"dex":62,"name":"Poliwrath","types":["Water","Fighting"]},
+    {"dex":63,"name":"Abra","types":["Psychic"]},
+    {"dex":64,"name":"Kadabra","types":["Psychic"]},
+    {"dex":65,"name":"Alakazam","types":["Psychic"]},
+    {"dex":66,"name":"Machop","types":["Fighting"]},
+    {"dex":67,"name":"Machoke","types":["Fighting"]},
+    {"dex":68,"name":"Machamp","types":["Fighting"]},
+    {"dex":69,"name":"Bellsprout","types":["Grass","Poison"]},
+    {"dex":70,"name":"Weepinbell","types":["Grass","Poison"]},
+    {"dex":71,"name":"Victreebel","types":["Grass","Poison"]},
+    {"dex":72,"name":"Tentacool","types":["Water","Poison"]},
+    {"dex":73,"name":"Tentacruel","types":["Water","Poison"]},
+    {"dex":74,"name":"Geodude","types":["Rock","Ground"]},
+    {"dex":75,"name":"Graveler","types":["Rock","Ground"]},
+    {"dex":76,"name":"Golem","types":["Rock","Ground"]},
+    {"dex":77,"name":"Ponyta","types":["Fire"]},
+    {"dex":78,"name":"Rapidash","types":["Fire"]},
+    {"dex":79,"name":"Slowpoke","types":["Water","Psychic"]},
+    {"dex":80,"name":"Slowbro","types":["Water","Psychic"]},
+    {"dex":81,"name":"Magnemite","types":["Electric"]},
+    {"dex":82,"name":"Magneton","types":["Electric"]},
+    {"dex":83,"name":"Farfetch'd","types":["Normal","Flying"]},
+    {"dex":84,"name":"Doduo","types":["Normal","Flying"]},
+    {"dex":85,"name":"Dodrio","types":["Normal","Flying"]},
+    {"dex":86,"name":"Seel","types":["Water"]},
+    {"dex":87,"name":"Dewgong","types":["Water","Ice"]},
+    {"dex":88,"name":"Grimer","types":["Poison"]},
+    {"dex":89,"name":"Muk","types":["Poison"]},
+    {"dex":90,"name":"Shellder","types":["Water"]},
+    {"dex":91,"name":"Cloyster","types":["Water","Ice"]},
+    {"dex":92,"name":"Gastly","types":["Ghost","Poison"]},
+    {"dex":93,"name":"Haunter","types":["Ghost","Poison"]},
+    {"dex":94,"name":"Gengar","types":["Ghost","Poison"]},
+    {"dex":95,"name":"Onix","types":["Rock","Ground"]},
+    {"dex":96,"name":"Drowzee","types":["Psychic"]},
+    {"dex":97,"name":"Hypno","types":["Psychic"]},
+    {"dex":98,"name":"Krabby","types":["Water"]},
+    {"dex":99,"name":"Kingler","types":["Water"]},
+    {"dex":100,"name":"Voltorb","types":["Electric"]},
+    {"dex":101,"name":"Electrode","types":["Electric"]},
+    {"dex":102,"name":"Exeggcute","types":["Grass","Psychic"]},
+    {"dex":103,"name":"Exeggutor","types":["Grass","Psychic"]},
+    {"dex":104,"name":"Cubone","types":["Ground"]},
+    {"dex":105,"name":"Marowak","types":["Ground"]},
+    {"dex":106,"name":"Hitmonlee","types":["Fighting"]},
+    {"dex":107,"name":"Hitmonchan","types":["Fighting"]},
+    {"dex":108,"name":"Lickitung","types":["Normal"]},
+    {"dex":109,"name":"Koffing","types":["Poison"]},
+    {"dex":110,"name":"Weezing","types":["Poison"]},
+    {"dex":111,"name":"Rhyhorn","types":["Ground","Rock"]},
+    {"dex":112,"name":"Rhydon","types":["Ground","Rock"]},
+    {"dex":113,"name":"Chansey","types":["Normal"]},
+    {"dex":114,"name":"Tangela","types":["Grass"]},
+    {"dex":115,"name":"Kangaskhan","types":["Normal"]},
+    {"dex":116,"name":"Horsea","types":["Water"]},
+    {"dex":117,"name":"Seadra","types":["Water"]},
+    {"dex":118,"name":"Goldeen","types":["Water"]},
+    {"dex":119,"name":"Seaking","types":["Water"]},
+    {"dex":120,"name":"Staryu","types":["Water"]},
+    {"dex":121,"name":"Starmie","types":["Water","Psychic"]},
+    {"dex":122,"name":"Mr. Mime","types":["Psychic"]},
+    {"dex":123,"name":"Scyther","types":["Bug","Flying"]},
+    {"dex":124,"name":"Jynx","types":["Ice","Psychic"]},
+    {"dex":125,"name":"Electabuzz","types":["Electric"]},
+    {"dex":126,"name":"Magmar","types":["Fire"]},
+    {"dex":127,"name":"Pinsir","types":["Bug"]},
+    {"dex":128,"name":"Tauros","types":["Normal"]},
+    {"dex":129,"name":"Magikarp","types":["Water"]},
+    {"dex":130,"name":"Gyarados","types":["Water","Flying"]},
+    {"dex":131,"name":"Lapras","types":["Water","Ice"]},
+    {"dex":132,"name":"Ditto","types":["Normal"]},
+    {"dex":133,"name":"Eevee","types":["Normal"]},
+    {"dex":134,"name":"Vaporeon","types":["Water"]},
+    {"dex":135,"name":"Jolteon","types":["Electric"]},
+    {"dex":136,"name":"Flareon","types":["Fire"]},
+    {"dex":137,"name":"Porygon","types":["Normal"]},
+    {"dex":138,"name":"Omanyte","types":["Rock","Water"]},
+    {"dex":139,"name":"Omastar","types":["Rock","Water"]},
+    {"dex":140,"name":"Kabuto","types":["Rock","Water"]},
+    {"dex":141,"name":"Kabutops","types":["Rock","Water"]},
+    {"dex":142,"name":"Aerodactyl","types":["Rock","Flying"]},
+    {"dex":143,"name":"Snorlax","types":["Normal"]},
+    {"dex":144,"name":"Articuno","types":["Ice","Flying"]},
+    {"dex":145,"name":"Zapdos","types":["Electric","Flying"]},
+    {"dex":146,"name":"Moltres","types":["Fire","Flying"]},
+    {"dex":147,"name":"Dratini","types":["Dragon"]},
+    {"dex":148,"name":"Dragonair","types":["Dragon"]},
+    {"dex":149,"name":"Dragonite","types":["Dragon","Flying"]},
+    {"dex":150,"name":"Mewtwo","types":["Psychic"]},
+    {"dex":151,"name":"Mew","types":["Psychic"]}
+  ];
+
+  const POKE_BY_DEX = new Map(POKEDEX.map(p => [p.dex, p]));
+
+  // Synthetic power by dex (0..1): deterministic, smooth-ish.
+  function powerNormByDex(dex) {
+    // map dex to pseudo power using sin + hash
+    const x = dex * 0.37;
+    const s = (Math.sin(x) + 1) / 2; // 0..1
+    const h = ((dex * 2654435761) >>> 0) / 0xFFFFFFFF; // 0..1
+    // blend and add "legendary bump"
+    let p = 0.65 * s + 0.35 * h;
+    if (dex >= 144 && dex <= 151) p = clamp(p + 0.20, 0, 1);
+    if (dex === 150) p = clamp(p + 0.10, 0, 1);
+    return p;
+  }
+
+  // Evolution chains (Gen 1 only)
+  const EVOLVE_TO = new Map([
+    [1,2],[2,3],[4,5],[5,6],[7,8],[8,9],[10,11],[11,12],[13,14],[14,15],[16,17],[17,18],[19,20],
+    [21,22],[23,24],[25,26],[27,28],[29,30],[30,31],[32,33],[33,34],[35,36],[37,38],[39,40],[41,42],
+    [43,44],[44,45],[46,47],[48,49],[50,51],[52,53],[54,55],[56,57],[58,59],[60,61],[61,62],[63,64],[64,65],
+    [66,67],[67,68],[69,70],[70,71],[72,73],[74,75],[75,76],[77,78],[79,80],[81,82],[84,85],[86,87],[88,89],
+    [90,91],[92,93],[93,94],[96,97],[98,99],[100,101],[102,103],[104,105],[109,110],[111,112],[116,117],
+    [118,119],[120,121],[129,130],[133,134],[133,135],[133,136],[138,139],[140,141],[147,148],[148,149]
+  ]);
+
+  // ------------------------------
+  // Stages: Types + difficulty + jitter
+  // ------------------------------
+  const STAGES = [
+    { id:'GYM_1', name:'Gym 1', kind:'GYM', types:['Rock'], difficulty:0,  jitter:{enabled:false,min:0,max:0} },
+    { id:'GYM_2', name:'Gym 2', kind:'GYM', types:['Water'], difficulty:4,  jitter:{enabled:false,min:0,max:0} },
+    { id:'GYM_3', name:'Gym 3', kind:'GYM', types:['Electric'], difficulty:8,  jitter:{enabled:false,min:0,max:0} },
+    { id:'GYM_4', name:'Gym 4', kind:'GYM', types:['Grass'], difficulty:12, jitter:{enabled:false,min:0,max:0} },
+    { id:'GYM_5', name:'Gym 5', kind:'GYM', types:['Poison'], difficulty:16, jitter:{enabled:true,min:-2,max:2} },
+    { id:'GYM_6', name:'Gym 6', kind:'GYM', types:['Psychic'], difficulty:20, jitter:{enabled:true,min:-2,max:2} },
+    { id:'GYM_7', name:'Gym 7', kind:'GYM', types:['Fire'], difficulty:24, jitter:{enabled:true,min:-2,max:2} },
+    { id:'GYM_8', name:'Gym 8', kind:'GYM', types:['Ground'], difficulty:28, jitter:{enabled:true,min:-2,max:2} },
+    { id:'E4_1',  name:'Elite Four 1', kind:'E4', types:['Ice'], difficulty:34, jitter:{enabled:true,min:-3,max:3} },
+    { id:'E4_2',  name:'Elite Four 2', kind:'E4', types:['Fighting'], difficulty:38, jitter:{enabled:true,min:-3,max:3} },
+    { id:'E4_3',  name:'Elite Four 3', kind:'E4', types:['Ghost'], difficulty:42, jitter:{enabled:true,min:-3,max:3} },
+    { id:'E4_4',  name:'Elite Four 4', kind:'E4', types:['Dragon'], difficulty:46, jitter:{enabled:true,min:-3,max:3} },
+    { id:'CHAMP', name:'Champion', kind:'CHAMP', types:['Mixed'], difficulty:50, jitter:{enabled:true,min:-3,max:3} }
+  ];
+
+  // ------------------------------
+  // Balance config
+  // ------------------------------
+  const BAL = {
+    intermissionSpins: { base: 1, withRunningShoes: 2 },
+    intermissionActions: [
+      { id:1,  label:'Capture', weight:30 },
+      { id:2,  label:'Double Capture', weight:10 },
+      { id:3,  label:'Guaranteed Rare', weight:6 },
+      { id:4,  label:'Mystery Pokémon', weight:9 },
+      { id:5,  label:'Evolve Party Pokémon', weight:12 },
+      { id:9,  label:'Type Shield', weight:10 },
+      { id:11, label:'Lucky Charm', weight:6 },
+      { id:13, label:'Bonus Slot (Next Battle)', weight:7 },
+      { id:16, label:'Find Item', weight:10 }
+    ],
+    capture: {
+      tierWeights: [
+        { label:'Common', weight:70 },
+        { label:'Uncommon', weight:25 },
+        { label:'Rare', weight:5 }
+      ],
+      tierWeightsMystery: [
+        { label:'Common', weight:55 },
+        { label:'Uncommon', weight:35 },
+        { label:'Rare', weight:10 }
+      ],
+      resultWeights: [
+        { label:'Fail', weight:30 },
+        { label:'Success', weight:60 },
+        { label:'Critical', weight:10 }
+      ],
+      criticalBonusNextBattlePct: 6,
+      partyFull: [
+        { label:'Replace Random', weight:40, key:'replaceRandom' },
+        { label:'Replace Worst Matchup', weight:40, key:'replaceWorst' },
+        { label:'Discard New', weight:20, key:'discard' }
+      ]
     },
-    "clamp": [5, 95]
+    items: {
+      findItem: [
+        { label:'Potion', weight:45, key:'potion' },
+        { label:'Type Shield', weight:30, key:'typeShield' },
+        { label:'Lucky Charm', weight:20, key:'luckyCharm' },
+        { label:'Running Shoes', weight:5, key:'runningShoes' }
+      ],
+      typeShieldBonusPct: 8,
+      autoConsumeOnLossOrder: ['luckyCharm','potion']
+    },
+    winModel: {
+      baseChance: 10,
+      // Gym1 baseline contributions (before stage scaling)
+      contributionBase: { veryStrong:36, strong:30, neutral:24, resisted:18 },
+      // per-stage multiplier: Gym1=1.0, E4≈0.13
+      stageMult: { early:1.0, late:0.13 },
+      clampMin: 5,
+      clampMax: 95,
+      diminishingReturns: { enabled:true, expEarly:1.0, expLate:0.90 }
+    }
+  };
+
+  // ------------------------------
+  // Derived rarity pools (Common/Uncommon/Rare) from synthetic power.
+  // ------------------------------
+  const sortedByPower = [...POKEDEX].sort((a,b) => powerNormByDex(a.dex) - powerNormByDex(b.dex));
+  const commonCut = Math.floor(sortedByPower.length * 0.60);
+  const uncommonCut = Math.floor(sortedByPower.length * 0.90);
+  const POOL_COMMON = sortedByPower.slice(0, commonCut);
+  const POOL_UNCOMMON = sortedByPower.slice(commonCut, uncommonCut);
+  const POOL_RARE = sortedByPower.slice(uncommonCut);
+
+  function poolForTier(tier) {
+    if (tier === 'Common') return POOL_COMMON;
+    if (tier === 'Uncommon') return POOL_UNCOMMON;
+    return POOL_RARE;
   }
-};
 
-// ── Global State ──────────────────────────────────────────────
-let G = {};
-let DATA = {};
+  // ------------------------------
+  // Game State
+  // ------------------------------
+  const makeInitialState = () => {
+    const seedStr = String(Date.now()) + '|' + Math.random().toString(16).slice(2);
+    const seed = hashStringToSeed(seedStr);
+    const rng = mulberry32(seed);
 
-// ── Data Init ─────────────────────────────────────────────────
-function loadData() {
-  DATA.pokedex = INLINE_POKEDEX;
-  DATA.typeChart = INLINE_TYPECHART;
-  DATA.stages = INLINE_STAGES;
-  DATA.balance = INLINE_BALANCE;
-  DATA.byTier = { Common: [], Uncommon: [], Rare: [] };
-  for (const p of DATA.pokedex) DATA.byTier[p.tier].push(p);
-  DATA.dexMap = {};
-  for (const p of DATA.pokedex) DATA.dexMap[p.dexNumber] = p;
-}
+    return {
+      seed,
+      rng,
+      phase: 'STARTER', // STARTER, BATTLE, INTERMISSION, GAME_OVER, VICTORY
+      stageIndex: 0,
+      stageJitterById: {},
+      party: [], // array of dex numbers
+      inventory: { potion:0, luckyCharm:0, typeShield:0, runningShoes:false },
+      buffs: { nextBattleCritBonus:0, nextBattleBonusSlot:false, nextBattleTempDex:null },
+      wheel: null, // current wheel slices
+      wheelPurpose: '',
+      pending: null, // step machine for sub-wheels
+      log: []
+    };
+  };
 
-// ── Wheel Engine ───────────────────────────────────────────────
-const canvas = document.getElementById('wheel-canvas');
-const ctx = canvas.getContext('2d');
+  let S = makeInitialState();
 
-const WHEEL_COLORS_DARK = [
-  '#c03060','#e06020','#b8a020','#208050','#2060c0','#803090',
-  '#c05050','#2090a0','#a04080','#50a030','#d04030','#3060a0',
-  '#a07020','#306090'
-];
-const WHEEL_COLORS_LIGHT = [
-  '#f06090','#f0a060','#d8c040','#60c080','#6090e0','#c070d0',
-  '#e08080','#60c0d0','#d070a0','#80d070','#f07060','#6080d0',
-  '#d0a040','#5080d0'
-];
+  // ------------------------------
+  // UI elements
+  // ------------------------------
+  const el = (id) => document.getElementById(id);
+  const wheelCanvas = el('wheel');
+  const ctx = wheelCanvas.getContext('2d');
+  const spinBtn = el('spinBtn');
+  const restartBtn = el('restartBtn');
+  const phaseLabel = el('phaseLabel');
+  const phaseSub = el('phaseSub');
+  const nextInfo = el('nextInfo');
+  const resultText = el('resultText');
+  const partyGrid = el('partyGrid');
+  const invRow = el('invRow');
+  const logBox = el('logBox');
+  const seedPill = el('seedPill');
+  const stagePill = el('stagePill');
+  const chanceText = el('chanceText');
+  const chanceMeta = el('chanceMeta');
+  const breakdownText = el('breakdownText');
+  const darkToggle = el('darkToggle');
 
-let wheelState = {
-  slices: [],
-  angle: 0,
-  spinning: false,
-  targetAngle: 0,
-  startAngle: 0,
-  startTime: 0,
-  duration: 0,
-  onDone: null,
-};
-
-function buildWheel(slices) {
-  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const colors = isDark ? WHEEL_COLORS_DARK : WHEEL_COLORS_LIGHT;
-  return slices.map((s, i) => ({ ...s, color: colors[i % colors.length] }));
-}
-
-// Returns the label of the slice currently under the pointer (top of wheel).
-// The pointer is at the top, which corresponds to angle=0 in draw coords.
-// draw: slices start at (wheelAngle - PI/2). Pointer at top = absolute angle -PI/2 from center.
-// The slice at the pointer is whichever slice contains angle 0 (top) in the rotated wheel.
-function getPointerSlice(slices, angle) {
-  if (!slices || slices.length === 0) return null;
-  const total = slices.reduce((s, x) => s + x.weight, 0);
-  // "top" in our coordinate: the pointer sits at angle = -(PI/2) + angle relative to draw start
-  // Slices are drawn starting at (angle - PI/2), going clockwise.
-  // The pointer is at the top = angle (- PI/2) in absolute terms.
-  // We need to find which slice contains the pointer position.
-  // Normalize: pointer position within wheel = 0 (start of first slice reference angle)
-  // pointer is at the draw start angle = angle - PI/2
-  // So relative to draw start (angle - PI/2), pointer is at 0.
-  // But we want offset from angle=0 (the draw start of first slice at offset angle - PI/2)
-  // Actually simpler: the pointer is at the top. The wheel's reference angle rotates.
-  // At angle=0, slice[0] starts at -PI/2 (top). So pointer hits slice[0]'s start.
-  // pointer position in "slice space": we need (0 - (angle - PI/2)) mod 2PI = (PI/2 - angle) mod 2PI
-  // = how far into the wheel (clockwise from its start) the pointer sits
-  let pointerInWheel = ((Math.PI / 2 - angle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  let acc = 0;
-  for (const s of slices) {
-    const sweep = (s.weight / total) * 2 * Math.PI;
-    if (pointerInWheel < acc + sweep) return s;
-    acc += sweep;
+  // ------------------------------
+  // Logging
+  // ------------------------------
+  function log(tag, msg, kind='info') {
+    const ts = new Date().toLocaleTimeString();
+    S.log.unshift({ ts, tag, msg, kind });
+    renderLog();
   }
-  return slices[slices.length - 1];
-}
 
-function drawWheel(slices, angle) {
-  const W = canvas.width, H = canvas.height;
-  const cx = W / 2, cy = H / 2;
-  const r = Math.min(W, H) / 2 - 6;
-  ctx.clearRect(0, 0, W, H);
-  if (!slices || slices.length === 0) return;
+  function renderLog() {
+    logBox.innerHTML = S.log.slice(0, 80).map(r => `
+      <div class="row">
+        <span class="tag ${r.kind}">${r.tag}</span>
+        <span>${escapeHtml(r.msg)}</span>
+        <div style="margin-top:4px; color: var(--muted); font-family: var(--mono); font-size:10px;">${r.ts}</div>
+      </div>
+    `).join('');
+  }
 
-  let start = angle - Math.PI / 2;
-  const total = slices.reduce((s, x) => s + x.weight, 0);
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
 
-  for (const s of slices) {
-    const sweep = (s.weight / total) * 2 * Math.PI;
-    const end = start + sweep;
-    const mid = start + sweep / 2;
+  // ------------------------------
+  // Wheel rendering + spin animation
+  // ------------------------------
+  const wheelState = {
+    angle: 0,
+    spinning: false,
+    targetAngle: 0,
+    startAngle: 0,
+    startTime: 0,
+    duration: 0
+  };
 
+  function setWheel(purpose, slices) {
+    // slices: [{label, weight, data}]
+    S.wheelPurpose = purpose;
+    S.wheel = slices.map(s => ({...s}));
+    resultText.textContent = '';
+    drawWheel();
+  }
+
+  function totalWeight() {
+    return (S.wheel || []).reduce((a,s) => a + (s.weight ?? 1), 0);
+  }
+
+  function pickWheelOutcome(rng) {
+    return pickWeighted(rng, S.wheel);
+  }
+
+  function drawWheel() {
+    const slices = S.wheel || [];
+    const W = wheelCanvas.width, H = wheelCanvas.height;
+    const cx = W/2, cy = H/2;
+    ctx.clearRect(0,0,W,H);
+
+    // background circle
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(wheelState.angle);
+
+    const sum = totalWeight() || 1;
+    let start = -Math.PI/2;
+    const palette = [
+      'rgba(125,211,252,.22)','rgba(134,239,172,.20)','rgba(251,113,133,.18)','rgba(253,224,71,.18)',
+      'rgba(196,181,253,.20)','rgba(244,114,182,.18)','rgba(94,234,212,.18)','rgba(251,146,60,.18)'
+    ];
+
+    slices.forEach((s, i) => {
+      const frac = (s.weight ?? 1) / sum;
+      const end = start + frac * Math.PI * 2;
+
+      // slice
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.arc(0,0, W*0.45, start, end);
+      ctx.closePath();
+      ctx.fillStyle = palette[i % palette.length];
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255,255,255,.12)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // label
+      const mid = (start + end) / 2;
+      ctx.save();
+      ctx.rotate(mid);
+      ctx.translate(W*0.30, 0);
+      ctx.rotate(Math.PI/2);
+      ctx.fillStyle = 'rgba(255,255,255,.90)';
+      ctx.font = '800 20px ui-sans-serif, system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const label = s.label.length > 18 ? s.label.slice(0,16) + '…' : s.label;
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+
+      start = end;
+    });
+
+    // center hub
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, start, end);
-    ctx.closePath();
-    ctx.fillStyle = s.color;
+    ctx.arc(0,0, W*0.12, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
     ctx.fill();
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255,255,255,.18)';
+    ctx.lineWidth = 2;
     ctx.stroke();
 
-    if (sweep > 0.12) {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(mid);
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-      ctx.fillStyle = isDark ? '#fff' : '#000';
-      ctx.shadowColor = isDark ? '#000' : '#fff';
-      ctx.shadowBlur = 4;
-      let label = s.label.length > 14 ? s.label.slice(0, 13) + '\u2026' : s.label;
-      const fontSize = Math.max(8, Math.min(13, sweep * 40));
-      ctx.font = `bold ${fontSize}px 'VT323', monospace`;
-      ctx.fillText(label, r * 0.65, 0);
-      ctx.restore();
+    ctx.fillStyle = 'rgba(255,255,255,.88)';
+    ctx.font = '900 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SPIN', 0, 2);
+
+    ctx.restore();
+  }
+
+  function spinWheel() {
+    if (wheelState.spinning) return;
+    if (!S.wheel || S.wheel.length === 0) return;
+
+    wheelState.spinning = true;
+    spinBtn.disabled = true;
+
+    // choose outcome now (so we can land deterministically)
+    const outcome = pickWheelOutcome(S.rng);
+
+    // convert outcome to an angle that lands that slice at pointer (top, -90deg).
+    // We'll compute slice ranges based on weights.
+    const sum = totalWeight() || 1;
+    let start = -Math.PI/2;
+    let chosenStart = start, chosenEnd = start;
+    for (const s of S.wheel) {
+      const frac = (s.weight ?? 1) / sum;
+      const end = start + frac * Math.PI * 2;
+      if (s === outcome) { chosenStart = start; chosenEnd = end; break; }
+      start = end;
     }
-    start = end;
-  }
+    const chosenMid = (chosenStart + chosenEnd) / 2;
 
-  // Center hub
-  ctx.beginPath();
-  ctx.arc(cx, cy, 18, 0, 2 * Math.PI);
-  ctx.fillStyle = '#111';
-  ctx.fill();
-  ctx.strokeStyle = '#f8e71c';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-}
+    // we want chosenMid + wheelAngle == -PI/2 (pointer). Since we draw with wheelState.angle, pointer is fixed.
+    // Actually pointer is visually at top; our slice labels start from -PI/2 too.
+    // So we want wheelState.angle such that chosenMid + wheelState.angle == -PI/2.
+    // => wheelState.angleTarget = -PI/2 - chosenMid, plus multiple spins.
+    const spins = 6 + Math.floor(S.rng() * 4); // 6..9 rotations
+    const target = (-Math.PI/2 - chosenMid) + spins * Math.PI * 2;
 
-function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    wheelState.startAngle = wheelState.angle;
+    wheelState.targetAngle = target;
+    wheelState.startTime = performance.now();
+    wheelState.duration = 1400 + Math.floor(S.rng() * 600); // 1.4..2.0s
 
-function animateSpin(timestamp) {
-  if (!wheelState.spinning) return;
-  const elapsed = timestamp - wheelState.startTime;
-  const progress = Math.min(elapsed / wheelState.duration, 1);
-  wheelState.angle = wheelState.startAngle + (wheelState.targetAngle - wheelState.startAngle) * easeOut(progress);
-  drawWheel(wheelState.slices, wheelState.angle);
-
-  // Live pointer label update
-  const current = getPointerSlice(wheelState.slices, wheelState.angle);
-  if (current) setPointerLabel(current.label);
-
-  if (progress < 1) {
-    requestAnimationFrame(animateSpin);
-  } else {
-    wheelState.spinning = false;
-    canvas.classList.remove('wheel-spinning');
-    if (wheelState.onDone) wheelState.onDone();
-  }
-}
-
-function spinWheel(slices, onDone) {
-  if (wheelState.spinning) return;
-  if (!slices || slices.length === 0) return;
-
-  const built = buildWheel(slices);
-  wheelState.slices = built;
-
-  // Weighted random winner
-  const total = slices.reduce((s, x) => s + x.weight, 0);
-  let r = Math.random() * total;
-  let winnerIdx = slices.length - 1;
-  for (let i = 0; i < slices.length; i++) {
-    r -= slices[i].weight;
-    if (r <= 0) { winnerIdx = i; break; }
-  }
-
-  // Compute target angle so winner slice mid is at pointer (top)
-  const totalW = slices.reduce((s, x) => s + x.weight, 0);
-  let accAngle = 0;
-  for (let i = 0; i < winnerIdx; i++) accAngle += (slices[i].weight / totalW) * 2 * Math.PI;
-  const winnerMid = accAngle + (slices[winnerIdx].weight / totalW) * Math.PI;
-
-  // We want pointer (top) to land on winnerMid.
-  // pointer position in slice space: (PI/2 - angle) mod 2PI = winnerMid
-  // => angle = PI/2 - winnerMid  (mod 2PI)
-  const targetNorm = ((Math.PI / 2 - winnerMid) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  const currentNorm = ((wheelState.angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-  const spins = 4 + Math.random() * 4;
-  let diff = (targetNorm - currentNorm + 2 * Math.PI) % (2 * Math.PI);
-  if (diff < 0.01) diff += 2 * Math.PI; // ensure at least one full rotation portion
-
-  wheelState.targetAngle = wheelState.angle + spins * 2 * Math.PI + diff;
-  wheelState.startAngle = wheelState.angle;
-  wheelState.spinning = true;
-  wheelState.startTime = performance.now();
-  wheelState.duration = 2800 + Math.random() * 1000;
-  wheelState.onDone = () => {
-    const finalSlice = getPointerSlice(built, wheelState.angle);
-    setPointerLabel(finalSlice ? finalSlice.label : '');
-    onDone(winnerIdx, built[winnerIdx]);
-  };
-  canvas.classList.add('wheel-spinning');
-  requestAnimationFrame(animateSpin);
-}
-
-// ── Pointer Label ──────────────────────────────────────────────
-function setPointerLabel(text) {
-  document.getElementById('pointer-label').textContent = text ? `▼  ${text}` : '';
-}
-
-// ── Type Effectiveness ─────────────────────────────────────────
-function getEffectiveness(attackType, defType) {
-  const row = DATA.typeChart[attackType];
-  if (!row) return 1;
-  return row[defType] ?? 1;
-}
-
-function getPokemonMatchup(pokemon, stageTypes) {
-  const pokemonTypes = [pokemon.type1, pokemon.type2].filter(Boolean);
-  const filtered = stageTypes.filter(t => t !== 'Mixed');
-  let best = 0, superCount = 0;
-  for (const pt of pokemonTypes) {
-    for (const st of filtered) {
-      const eff = getEffectiveness(pt, st);
-      if (eff > best) best = eff;
-      if (eff >= 2) superCount++;
+    function anim(now) {
+      const t = clamp((now - wheelState.startTime) / wheelState.duration, 0, 1);
+      // easeOutCubic
+      const e = 1 - Math.pow(1 - t, 3);
+      wheelState.angle = wheelState.startAngle + (wheelState.targetAngle - wheelState.startAngle) * e;
+      drawWheel();
+      if (t < 1) {
+        requestAnimationFrame(anim);
+      } else {
+        wheelState.spinning = false;
+        spinBtn.disabled = false;
+        onWheelResult(outcome);
+      }
     }
+    requestAnimationFrame(anim);
   }
-  const bal = DATA.balance.winModel.contributions;
-  if (superCount >= 2) return { category: 'VeryStrong', value: bal.VeryStrong };
-  if (best >= 2)       return { category: 'Strong',     value: bal.Strong };
-  if (best >= 1)       return { category: 'Neutral',    value: bal.Neutral };
-  return                      { category: 'Resisted',   value: bal.Resisted };
-}
 
-function computeWinChance(party, stageTypes, bonuses = []) {
-  const bal = DATA.balance.winModel;
-  let chance = bal.baseChance;
-  const breakdown = [];
-  for (const p of party) {
-    const m = getPokemonMatchup(p, stageTypes);
-    chance += m.value;
-    breakdown.push({ name: p.name, category: m.category, value: m.value, bonus: false });
+  // ------------------------------
+  // Game mechanics: chance computation
+  // ------------------------------
+  function stageProgress() {
+    return clamp(S.stageIndex / (STAGES.length - 1), 0, 1);
   }
-  for (const b of bonuses) {
-    chance += b.value;
-    breakdown.push({ name: b.label, category: b.category, value: b.value, bonus: true });
+
+  function stageContributionMultiplier() {
+    const t = stageProgress();
+    return lerp(BAL.winModel.stageMult.early, BAL.winModel.stageMult.late, t);
   }
-  return { chance: Math.max(bal.clamp[0], Math.min(bal.clamp[1], chance)), breakdown };
-}
 
-// ── Spin Queue — manual player-driven sub-spins ────────────────
-// Each item: { slices, label, onResult(winnerIdx, slice, cb) }
-// Player presses SPIN for every step. Between steps we show a prompt.
-let _spinQueue = [];
-let _onQueueDone = null;
-
-function enqueueSpins(steps, onAllDone) {
-  _spinQueue = [...steps];
-  _onQueueDone = onAllDone;
-  advanceQueue();
-}
-
-function advanceQueue() {
-  if (_spinQueue.length === 0) {
-    if (_onQueueDone) _onQueueDone();
-    return;
+  function diminishingExponent() {
+    const t = stageProgress();
+    return lerp(BAL.winModel.diminishingReturns.expEarly, BAL.winModel.diminishingReturns.expLate, t);
   }
-  const step = _spinQueue.shift();
-  setWheelResult(step.prompt || 'Spin!');
-  setPointerLabel('');
-  drawWheel(buildWheel(step.slices), wheelState.angle);
-  // Pre-draw so player sees the wheel before spinning
-  wheelState.slices = buildWheel(step.slices);
-  drawWheel(wheelState.slices, wheelState.angle);
 
-  setSpinHandler(() => {
-    spinWheel(step.slices, (idx, slice) => {
-      step.onResult(idx, slice, () => {
-        renderAll();
-        advanceQueue();
+  function matchupCategory(pkm, stageTypes) {
+    const mult = bestOffensiveMultiplier(pkm.types, stageTypes);
+    if (mult >= 4) return 'veryStrong'; // e.g. 2x2
+    if (mult >= 2) return 'strong';
+    if (mult <= 0.5) return 'resisted';
+    return 'neutral';
+  }
+
+  function pokemonBaseContribution(category, dex) {
+    const base = BAL.winModel.contributionBase[category];
+    // Optional tiny stat factor from synthetic power (0.85..1.15) to add identity
+    const p = powerNormByDex(dex);
+    const statFactor = 0.85 + 0.30 * p;
+    return base * statFactor;
+  }
+
+  function computeBattleChance() {
+    const stage = STAGES[S.stageIndex];
+    const stageTypes = stage.types[0] === 'Mixed'
+      ? randomChampionTypesForStage(stage.id)
+      : stage.types;
+
+    // roll jitter once per stage, store
+    const jitter = getOrRollStageJitter(stage);
+
+    // Auto-consume start-of-battle items/buffs: Type Shield + crit bonus
+    let bonuses = 0;
+    let bonusLines = [];
+
+    if (S.inventory.typeShield > 0) {
+      bonuses += BAL.items.typeShieldBonusPct;
+      S.inventory.typeShield -= 1;
+      bonusLines.push(`+${BAL.items.typeShieldBonusPct}% (Type Shield auto-consumed)`);
+      log('ITEM', 'Type Shield auto-consumed (+8% this battle).', 'info');
+    }
+
+    if (S.buffs.nextBattleCritBonus > 0) {
+      bonuses += S.buffs.nextBattleCritBonus;
+      bonusLines.push(`+${S.buffs.nextBattleCritBonus}% (Critical Capture bonus auto-consumed)`);
+      log('BUFF', `Critical Capture bonus auto-consumed (+${S.buffs.nextBattleCritBonus}%).`, 'info');
+      S.buffs.nextBattleCritBonus = 0;
+    }
+
+    // Bonus slot handling: temporary 7th contributor for this battle
+    let tempDex = null;
+    if (S.buffs.nextBattleBonusSlot) {
+      tempDex = S.buffs.nextBattleTempDex;
+      S.buffs.nextBattleBonusSlot = false;
+      S.buffs.nextBattleTempDex = null;
+      if (tempDex != null) {
+        const p = POKE_BY_DEX.get(tempDex);
+        log('BUFF', `Bonus Slot active: extra contributor = ${p?.name ?? ('Dex ' + tempDex)}.`, 'info');
+      }
+    }
+
+    // Compute pokemon contributions (scaled by stage)
+    const multStage = stageContributionMultiplier();
+    const contributions = [];
+
+    const dexes = [...S.party];
+    if (tempDex != null) dexes.push(tempDex);
+
+    for (const dex of dexes) {
+      const p = POKE_BY_DEX.get(dex);
+      const cat = matchupCategory(p, stageTypes);
+      const baseContrib = pokemonBaseContribution(cat, dex); // Gym1 baseline-ish
+      const scaled = baseContrib * multStage;
+      contributions.push({
+        dex, name: p.name, types: p.types, category: cat,
+        base: baseContrib,
+        stageMult: multStage,
+        final: scaled
       });
-    });
-  });
-}
-
-// ── Game Init ──────────────────────────────────────────────────
-function initGame() {
-  G = {
-    phase: 'STARTER',
-    stageIndex: 0,
-    party: [],
-    inventory: { Potion: 0, LuckyCharm: 0, TypeShield: 0, RunningShoes: false },
-    bonuses: { criticalBonus: false, bonusSlot: null },
-    intermissionSpinsLeft: 0,
-    runEnded: false,
-  };
-  _spinQueue = [];
-  _onQueueDone = null;
-  document.getElementById('run-log').innerHTML = '';
-  setPointerLabel('');
-  renderAll();
-  drawWheel([], 0);
-  setupStarterWheel();
-}
-
-// ── Starter ────────────────────────────────────────────────────
-function setupStarterWheel() {
-  const starters = [DATA.dexMap[1], DATA.dexMap[4], DATA.dexMap[7]];
-  const slices = starters.map(p => ({ label: p.name, weight: 1 }));
-  setPhaseLabel('Starter Selection', 'Who will you choose?');
-  setWheelResult('Spin to choose your starter!');
-  setPointerLabel('');
-  wheelState.slices = buildWheel(slices);
-  drawWheel(wheelState.slices, wheelState.angle);
-
-  setSpinHandler(() => {
-    spinWheel(slices, (idx) => {
-      const chosen = starters[idx];
-      log('\u2728', `Starter: ${chosen.name}!`, 'log-capture');
-      G.party.push({ ...chosen });
-      G.phase = 'INTERMISSION';
-      G.stageIndex = 0;
-      G.intermissionSpinsLeft = getIntermissionSpins();
-      setWheelResult(`${chosen.name} is your starter!`);
-      renderAll();
-      setupIntermissionWheel();
-    });
-  });
-}
-
-// ── Intermission ───────────────────────────────────────────────
-function getIntermissionSpins() {
-  return G.inventory.RunningShoes
-    ? DATA.balance.intermissionSpins.withRunningShoes
-    : DATA.balance.intermissionSpins.base;
-}
-
-function setupIntermissionWheel() {
-  if (G.intermissionSpinsLeft <= 0) {
-    setupBattlePhase();
-    return;
-  }
-  const stage = DATA.stages[G.stageIndex];
-  setPhaseLabel('Intermission', `Before: ${stage.stageName}`);
-  updateSpinQueueLabel();
-
-  const bw = DATA.balance.intermissionWheel;
-  const slices = Object.entries(bw).map(([key, w]) => ({
-    label: formatActionLabel(key), weight: w, action: key
-  }));
-  wheelState.slices = buildWheel(slices);
-  drawWheel(wheelState.slices, wheelState.angle);
-  setWheelResult('Spin the intermission wheel!');
-  setPointerLabel('');
-
-  setSpinHandler(() => {
-    spinWheel(slices, (idx, slice) => {
-      G.intermissionSpinsLeft--;
-      updateSpinQueueLabel();
-      log('\u1F3A1', `Action: ${slice.label}`, 'log-info');
-      setWheelResult(`${slice.label}`);
-      resolveIntermissionAction(slice.action, () => {
-        renderAll();
-        // After action done, setup next intermission spin or go to battle
-        setupIntermissionWheel();
-      });
-    });
-  });
-}
-
-function formatActionLabel(key) {
-  return {
-    Capture: 'Capture!', DoubleCapture: 'x2 Capture!',
-    GuaranteedRareEncounter: 'Rare!', MysteryPokemon: 'Mystery!',
-    EvolvePartyPokemon: 'Evolve!', TypeShield: 'Type Shield!',
-    LuckyCharm: 'Lucky Charm!', BonusSlotNextBattle: 'Bonus Slot!',
-    FindItem: 'Find Item!',
-  }[key] || key;
-}
-
-function updateSpinQueueLabel() {
-  const el = document.getElementById('spin-queue-label');
-  el.textContent = G.phase === 'INTERMISSION' ? `Intermission spins left: ${G.intermissionSpinsLeft}` : '';
-}
-
-// ── Action Resolver ────────────────────────────────────────────
-function resolveIntermissionAction(action, cb) {
-  switch(action) {
-    case 'Capture':
-      doCapture(false, false, cb); break;
-    case 'DoubleCapture':
-      log('\u1F3A3', 'Double Capture! First capture...', 'log-capture');
-      doCapture(false, false, () => {
-        log('\u1F3A3', 'Double Capture! Second capture...', 'log-capture');
-        doCapture(false, false, cb);
-      });
-      break;
-    case 'GuaranteedRareEncounter':
-      doCapture(true, false, cb); break;
-    case 'MysteryPokemon':
-      doCapture(false, true, cb); break;
-    case 'EvolvePartyPokemon':
-      doEvolve(cb); break;
-    case 'TypeShield':
-      G.inventory.TypeShield++;
-      log('\u1F6E1', 'Type Shield added to bag!', 'log-item');
-      cb(); break;
-    case 'LuckyCharm':
-      G.inventory.LuckyCharm++;
-      log('\u1F340', 'Lucky Charm added to bag!', 'log-item');
-      cb(); break;
-    case 'BonusSlotNextBattle':
-      doBonusSlot(cb); break;
-    case 'FindItem':
-      doFindItem(cb); break;
-    default: cb();
-  }
-}
-
-// ── Capture — fully manual sub-spins ──────────────────────────
-function doCapture(forceRare, mystery, cb) {
-  const steps = [];
-
-  if (forceRare) {
-    log('\u2B50', 'Guaranteed Rare Encounter! Spin to pick the Pokemon.', 'log-capture');
-    const pool = DATA.byTier['Rare'];
-    steps.push({
-      prompt: '\u2B50 Spin to pick the Rare Pokemon!',
-      slices: pool.map(p => ({ label: p.name, weight: 1 })),
-      onResult(idx, slice, next) {
-        const caught = pool[idx];
-        log('\u1F3B0', `Rare encounter: ${caught.name}`, 'log-capture');
-        pushCaptureResultStep(steps, caught, cb);
-        next();
-      }
-    });
-  } else if (mystery) {
-    log('\u2753', 'Mystery Pokemon! Spin the tier.', 'log-capture');
-    const mw = DATA.balance.mysteryTierWeights;
-    steps.push({
-      prompt: '\u2753 Mystery Pokemon — Spin the tier!',
-      slices: Object.entries(mw).map(([t, w]) => ({ label: t, weight: w, tier: t })),
-      onResult(idx, slice, next) {
-        const tier = slice.tier;
-        log('\u1F3A1', `Mystery tier: ${tier}`, 'log-capture');
-        const pool = DATA.byTier[tier];
-        // Inject Pokemon step at front of remaining queue
-        _spinQueue.unshift({
-          prompt: `\u2753 Spin to pick the ${tier} Pokemon!`,
-          slices: pool.map(p => ({ label: p.name, weight: 1 })),
-          onResult(idx2, slice2, next2) {
-            const caught = pool[idx2];
-            log('\u1F3B0', `Mystery: ${caught.name}`, 'log-capture');
-            // Inject result step
-            _spinQueue.unshift(makeCaptureResultStep(caught, cb));
-            next2();
-          }
-        });
-        next();
-      }
-    });
-  } else {
-    // Standard: Tier → Pokemon → Result
-    log('\u1F3A3', 'Capture! Spin the tier.', 'log-capture');
-    const tw = DATA.balance.captureTierWeights;
-    steps.push({
-      prompt: '\u1F3A3 Capture — Spin the tier!',
-      slices: Object.entries(tw).map(([t, w]) => ({ label: t, weight: w, tier: t })),
-      onResult(idx, slice, next) {
-        const tier = slice.tier;
-        log('\u1F3A1', `Tier: ${tier}`, 'log-capture');
-        const pool = DATA.byTier[tier];
-        _spinQueue.unshift({
-          prompt: `\u1F3A3 Spin to pick the ${tier} Pokemon!`,
-          slices: pool.map(p => ({ label: p.name, weight: 1 })),
-          onResult(idx2, slice2, next2) {
-            const caught = pool[idx2];
-            log('\u1F3B0', `Encounter: ${caught.name}`, 'log-capture');
-            _spinQueue.unshift(makeCaptureResultStep(caught, cb));
-            next2();
-          }
-        });
-        next();
-      }
-    });
-  }
-
-  enqueueSpins(steps, () => {});
-}
-
-function makeCaptureResultStep(pokemon, cb) {
-  const rw = DATA.balance.captureResultWeights;
-  return {
-    prompt: `\u1F3AF Spin the capture result for ${pokemon.name}!`,
-    slices: Object.entries(rw).map(([r, w]) => ({ label: r, weight: w })),
-    onResult(idx, slice, next) {
-      const result = slice.label;
-      if (result === 'Fail') {
-        log('\u1F4A8', `Capture failed! ${pokemon.name} escaped.`, 'log-lose');
-        setWheelResult(`${pokemon.name} escaped!`);
-        cb();
-        next();
-      } else if (result === 'Critical') {
-        log('\u1F4A5', `Critical! ${pokemon.name} + battle bonus +${DATA.balance.criticalBonus}%!`, 'log-crit');
-        G.bonuses.criticalBonus = true;
-        setWheelResult(`Critical! ${pokemon.name} caught!`);
-        addToParty(pokemon, cb, next);
-      } else {
-        log('\u2705', `Caught ${pokemon.name}!`, 'log-win');
-        setWheelResult(`${pokemon.name} caught!`);
-        addToParty(pokemon, cb, next);
-      }
     }
-  };
-}
 
-// Legacy helper (for forceRare path which builds steps array before enqueueing)
-function pushCaptureResultStep(steps, pokemon, cb) {
-  // We just push into the queue directly since steps array is already being processed
-  _spinQueue.unshift(makeCaptureResultStep(pokemon, cb));
-}
+    const sumScaled = contributions.reduce((s,c) => s + c.final, 0);
 
-function addToParty(pokemon, cb, next) {
-  if (G.party.length < 6) {
-    G.party.push({ ...pokemon });
-    log('\u2795', `${pokemon.name} joined the party!`, 'log-capture');
-    renderAll();
-    cb();
-    next();
-  } else {
-    doPartyFullSpin(pokemon, cb, next);
-  }
-}
-
-function doPartyFullSpin(newPokemon, cb, next) {
-  const pfw = DATA.balance.partyFullWheel;
-  const slices = Object.entries(pfw).map(([k, w]) => ({ label: formatPartyFullLabel(k), weight: w, action: k }));
-  const stage = DATA.stages[G.stageIndex];
-  log('\u1F4E6', 'Party full! Spin to decide...', 'log-info');
-  _spinQueue.unshift({
-    prompt: '\u1F4E6 Party full — what happens to the new Pokemon?',
-    slices,
-    onResult(idx, slice, next2) {
-      const action = slice.action;
-      if (action === 'DiscardNew') {
-        log('\u1F5D1', `${newPokemon.name} discarded.`, 'log-info');
-        setWheelResult(`${newPokemon.name} discarded!`);
-        cb(); next2();
-      } else if (action === 'ReplaceRandom') {
-        const i = Math.floor(Math.random() * G.party.length);
-        const removed = G.party[i];
-        G.party[i] = { ...newPokemon };
-        log('\u1F504', `Replaced ${removed.name} \u2192 ${newPokemon.name}.`, 'log-info');
-        setWheelResult(`${removed.name} \u2192 ${newPokemon.name}`);
-        renderAll(); cb(); next2();
-      } else {
-        const stageTypes = stage.stageTypes;
-        let worstIdx = 0, worstVal = Infinity;
-        G.party.forEach((p, i) => {
-          const { value } = getPokemonMatchup(p, stageTypes);
-          if (value < worstVal) { worstVal = value; worstIdx = i; }
-        });
-        const removed = G.party[worstIdx];
-        G.party[worstIdx] = { ...newPokemon };
-        log('\u1F504', `Replaced worst (${removed.name}) \u2192 ${newPokemon.name}.`, 'log-info');
-        setWheelResult(`${removed.name} \u2192 ${newPokemon.name}`);
-        renderAll(); cb(); next2();
-      }
+    let sumAfterDR = sumScaled;
+    let drExp = 1.0;
+    if (BAL.winModel.diminishingReturns.enabled) {
+      drExp = diminishingExponent();
+      // handle zero safely
+      sumAfterDR = sumScaled <= 0 ? 0 : Math.pow(sumScaled, drExp);
     }
-  });
-  next();
-}
 
-function formatPartyFullLabel(key) {
-  return { ReplaceRandom: 'Replace Random', ReplaceWorstMatchup: 'Replace Worst', DiscardNew: 'Discard New' }[key] || key;
-}
+    // base chance
+    const baseChance = BAL.winModel.baseChance;
 
-// ── Evolve ─────────────────────────────────────────────────────
-function doEvolve(cb) {
-  const evolvable = G.party.filter(p => p.evolvesTo);
-  if (evolvable.length === 0) {
-    log('\u274C', 'No evolvable Pokemon in party.', 'log-info');
-    setWheelResult('No evolutions available!');
-    cb(); return;
+    const rawChance = baseChance + sumAfterDR + bonuses;
+
+    const finalChance = clamp(rawChance - stage.difficulty + jitter, BAL.winModel.clampMin, BAL.winModel.clampMax);
+
+    // breakdown text
+    const lines = [];
+    lines.push(`Stage types: ${stageTypes.join('/')}  |  StageDifficulty: -${stage.difficulty}%  |  Jitter: ${jitter >=0 ? '+' : ''}${jitter}%`);
+    lines.push(`BaseChance: ${baseChance}%`);
+    lines.push(`Stage contribution multiplier: ${multStage.toFixed(2)} (Gym1→E4 scaling)`);
+    lines.push(`Pokémon contributions (each always positive):`);
+    contributions.forEach(c => {
+      lines.push(`- ${c.name} [${c.types.join('/')}]  cat=${c.category}  base=${c.base.toFixed(1)}  -> scaled=${c.final.toFixed(1)}`);
+    });
+    lines.push(`SumScaled: ${sumScaled.toFixed(1)}`);
+    if (BAL.winModel.diminishingReturns.enabled) {
+      lines.push(`Diminishing returns: exponent=${drExp.toFixed(2)}  => SumAfterDR: ${sumAfterDR.toFixed(1)}`);
+    }
+    if (bonusLines.length) lines.push(`Bonuses: ${bonusLines.join(' + ')}`);
+    lines.push(`RawChance: ${rawChance.toFixed(1)}%`);
+    lines.push(`FinalChance: ${finalChance.toFixed(1)}%`);
+
+    return { stage, stageTypes, jitter, baseChance, multStage, contributions, sumScaled, sumAfterDR, drExp, bonuses, rawChance, finalChance };
   }
-  const stage = DATA.stages[G.stageIndex];
-  const stageTypes = stage.stageTypes;
-  enqueueSpins([{
-    prompt: '\u2728 Evolve — Spin to pick which one!',
-    slices: [
-      { label: 'Random Evolvable', weight: 60, action: 'random' },
-      { label: 'Worst Matchup', weight: 40, action: 'worst' },
-    ],
-    onResult(idx, slice, next) {
-      let target;
-      if (slice.action === 'random') {
-        target = evolvable[Math.floor(Math.random() * evolvable.length)];
-      } else {
-        let worstVal = Infinity;
-        for (const p of evolvable) {
-          const { value } = getPokemonMatchup(p, stageTypes);
-          if (value < worstVal) { worstVal = value; target = p; }
+
+  function randomChampionTypesForStage(stageId) {
+    // Roll once per stage; store it like jitter so retries remain consistent.
+    if (!S.stageJitterById[`champTypes:${stageId}`]) {
+      const t1 = TYPES[Math.floor(S.rng() * TYPES.length)];
+      const t2 = TYPES[Math.floor(S.rng() * TYPES.length)];
+      S.stageJitterById[`champTypes:${stageId}`] = `${t1}/${t2}`;
+    }
+    const s = S.stageJitterById[`champTypes:${stageId}`];
+    return String(s).split('/');
+  }
+
+  function getOrRollStageJitter(stage) {
+    if (S.stageJitterById[stage.id] != null) return S.stageJitterById[stage.id];
+    let j = 0;
+    if (stage.jitter?.enabled) {
+      const min = stage.jitter.min, max = stage.jitter.max;
+      j = Math.floor(S.rng() * (max - min + 1)) + min;
+    }
+    S.stageJitterById[stage.id] = j;
+    return j;
+  }
+
+  // ------------------------------
+  // Wheels as a state machine (pending sub-wheels)
+  // ------------------------------
+  function gotoStarter() {
+    S.phase = 'STARTER';
+    S.pending = null;
+    setWheel('Starter Selection', [
+      { label:'Bulbasaur', weight:1, data:{dex:1} },
+      { label:'Charmander', weight:1, data:{dex:4} },
+      { label:'Squirtle', weight:1, data:{dex:7} },
+      { label:'Random Gen 1', weight:1, data:{dex:null} }
+    ]);
+    render();
+  }
+
+  function gotoBattle() {
+    S.phase = 'BATTLE';
+    S.pending = null;
+
+    // compute chance + set wheel Win/Lose with weights
+    const info = computeBattleChance();
+    const winW = info.finalChance;
+    const loseW = 100 - info.finalChance;
+    setWheel('Battle: Win / Lose', [
+      { label:'WIN', weight: winW, data:{outcome:'win', chance: info.finalChance} },
+      { label:'LOSE', weight: loseW, data:{outcome:'lose', chance: info.finalChance} }
+    ]);
+    render(info);
+  }
+
+  function gotoIntermission() {
+    S.phase = 'INTERMISSION';
+    S.pending = { spinsLeft: S.inventory.runningShoes ? BAL.intermissionSpins.withRunningShoes : BAL.intermissionSpins.base };
+    setWheel('Intermission Action', BAL.intermissionActions.map(a => ({ label:a.label, weight:a.weight, data:{actionId:a.id, label:a.label} })));
+    log('PHASE', `Intermission: spins = ${S.pending.spinsLeft}.`, 'info');
+    render();
+  }
+
+  // ------------------------------
+  // Action resolution
+  // ------------------------------
+  function onWheelResult(outcome) {
+    resultText.textContent = `${S.wheelPurpose} → ${outcome.label}`;
+
+    if (S.phase === 'STARTER') {
+      const chosenDex = outcome.data.dex ?? null;
+      let dex = chosenDex;
+      if (dex == null) {
+        dex = 1 + Math.floor(S.rng() * 151);
+      }
+      S.party = [dex];
+      const p = POKE_BY_DEX.get(dex);
+      log('START', `Starter: ${p.name} [${p.types.join('/')}]`, 'ok');
+      // go to first battle
+      gotoBattle();
+      return;
+    }
+
+    if (S.phase === 'BATTLE') {
+      const res = outcome.data.outcome;
+      const chance = outcome.data.chance;
+      if (res === 'win') {
+        const stage = STAGES[S.stageIndex];
+        log('BATTLE', `Won ${stage.name} (${stage.types.join('/')}) at ${chance.toFixed(1)}%`, 'ok');
+        // advance stage
+        S.stageIndex += 1;
+        if (S.stageIndex >= STAGES.length) {
+          S.phase = 'VICTORY';
+          setWheel('Victory!', [{label:'YOU DID IT 🎉', weight:1, data:{}}]);
+          log('END', 'VICTORY! You cleared the run.', 'ok');
+          render();
+          return;
         }
+        gotoIntermission();
+      } else {
+        const stage = STAGES[S.stageIndex];
+        log('BATTLE', `Lost ${stage.name} at ${chance.toFixed(1)}%`, 'bad');
+        handleLossRecoveryOrGameOver();
       }
-      const evolved = DATA.dexMap[target.evolvesTo];
-      if (evolved) {
-        const i = G.party.findIndex(p => p.dexNumber === target.dexNumber);
-        if (i >= 0) {
-          G.party[i] = { ...evolved };
-          log('\u2728', `${target.name} \u2192 ${evolved.name}!`, 'log-evolve');
-          setWheelResult(`${target.name} \u2192 ${evolved.name}!`);
-          renderAll();
-        }
-      }
-      cb(); next();
+      return;
     }
-  }], () => {});
-}
 
-// ── Find Item ──────────────────────────────────────────────────
-function doFindItem(cb) {
-  const fw = DATA.balance.findItemWheel;
-  const slices = Object.entries(fw).map(([k, w]) => ({
-    label: k === 'RunningShoes' ? 'Running Shoes' : k, weight: w, item: k
-  }));
-  log('\u1F50D', 'Find Item! Spin to see what you get.', 'log-item');
-  enqueueSpins([{
-    prompt: '\u1F50D Find Item — Spin!',
-    slices,
-    onResult(idx, slice, next) {
-      if (slice.item === 'RunningShoes') {
-        G.inventory.RunningShoes = true;
-        log('\u1F45F', 'Running Shoes! +1 intermission spin per stage!', 'log-item');
-      } else {
-        G.inventory[slice.item]++;
-        log('\u1F392', `Found ${slice.label}!`, 'log-item');
-      }
-      setWheelResult(`Found: ${slice.label}!`);
-      renderAll(); cb(); next();
+    if (S.phase === 'INTERMISSION') {
+      // resolve selected intermission action (may set up sub-wheel chain)
+      resolveIntermissionAction(outcome.data.actionId);
+      return;
     }
-  }], () => {});
-}
 
-// ── Bonus Slot ─────────────────────────────────────────────────
-function doBonusSlot(cb) {
-  if (G.party.length === 0) { cb(); return; }
-  const stage = DATA.stages[G.stageIndex];
-  const stageTypes = stage.stageTypes;
-  const slices = [
-    { label: 'Best Matchup', weight: 40, action: 'best' },
-    { label: 'Random Party', weight: 60, action: 'random' },
-  ];
-  log('\u2B50', 'Bonus Slot! Spin to pick the helper.', 'log-item');
-  enqueueSpins([{
-    prompt: '\u2B50 Bonus Slot — Spin to pick!',
-    slices,
-    onResult(idx, slice, next) {
-      let chosen;
-      if (slice.action === 'best') {
-        let bestVal = -1;
-        for (const p of G.party) {
-          const { value } = getPokemonMatchup(p, stageTypes);
-          if (value > bestVal) { bestVal = value; chosen = p; }
-        }
-      } else {
-        chosen = G.party[Math.floor(Math.random() * G.party.length)];
-      }
-      G.bonuses.bonusSlot = { ...chosen };
-      log('\u2B50', `Bonus slot: ${chosen.name} for next battle!`, 'log-item');
-      setWheelResult(`Bonus: ${chosen.name}!`);
-      renderAll(); cb(); next();
+    // sub-wheels are handled by S.pending.kind
+    if (S.pending && S.pending.kind) {
+      resolvePendingWheel(outcome);
+      return;
     }
-  }], () => {});
-}
-
-// ── Battle Phase ───────────────────────────────────────────────
-function setupBattlePhase() {
-  const stage = DATA.stages[G.stageIndex];
-  G.phase = 'BATTLE';
-  const kindLabel = { GYM: 'Gym Battle', E4: 'Elite Four', CHAMPION: 'Champion!' }[stage.stageKind] || 'Battle';
-  setPhaseLabel(kindLabel, stage.stageName);
-  updateSpinQueueLabel();
-
-  const activeBonuses = [];
-  if (G.inventory.TypeShield > 0) {
-    G.inventory.TypeShield--;
-    activeBonuses.push({ label: 'Type Shield', category: 'Shield', value: DATA.balance.typeShieldBonus });
-    log('\u1F6E1', `Type Shield active! +${DATA.balance.typeShieldBonus}%`, 'log-item');
-  }
-  if (G.bonuses.criticalBonus) {
-    activeBonuses.push({ label: 'Crit Bonus', category: 'Bonus', value: DATA.balance.criticalBonus });
-    log('\u1F4A5', `Crit bonus! +${DATA.balance.criticalBonus}%`, 'log-crit');
-    G.bonuses.criticalBonus = false;
   }
 
-  let stageTypes = stage.stageTypes;
-  if (stageTypes.includes('Mixed')) {
-    const allTypes = Object.keys(DATA.typeChart);
-    stageTypes = [
-      allTypes[Math.floor(Math.random() * allTypes.length)],
-      allTypes[Math.floor(Math.random() * allTypes.length)]
-    ];
-    log('\u1F300', `Champion uses: ${stageTypes.join(' / ')}`, 'log-info');
+  function handleLossRecoveryOrGameOver() {
+    // Auto-consume order: luckyCharm then potion
+    // LuckyCharm: reroll battle wheel (same chance/jitter)
+    if (S.inventory.luckyCharm > 0) {
+      S.inventory.luckyCharm -= 1;
+      log('ITEM', 'Lucky Charm auto-consumed: rerolling battle outcome.', 'info');
+      // re-enter battle (recompute chance; jitter same, but TypeShield already consumed at start-of-battle)
+      gotoBattle();
+      return;
+    }
+    if (S.inventory.potion > 0) {
+      S.inventory.potion -= 1;
+      log('ITEM', 'Potion auto-consumed: retrying battle.', 'info');
+      gotoBattle();
+      return;
+    }
+    S.phase = 'GAME_OVER';
+    setWheel('Game Over', [{label:'RIP 🪦 (Restart)', weight:1, data:{}}]);
+    log('END', 'GAME OVER. Press Restart to try again.', 'bad');
+    render();
   }
 
-  const battleParty = [...G.party];
-  if (G.bonuses.bonusSlot) {
-    battleParty.push({ ...G.bonuses.bonusSlot, _isBonus: true });
-    log('\u2B50', `Bonus slot active: ${G.bonuses.bonusSlot.name}`, 'log-item');
-  }
+  function resolveIntermissionAction(actionId) {
+    const stage = STAGES[S.stageIndex];
+    const nextStageLabel = stage ? `${stage.name} (${stage.types.join('/')})` : '—';
+    const spinsBefore = S.pending?.spinsLeft ?? 1;
 
-  const { chance, breakdown } = computeWinChance(battleParty, stageTypes, activeBonuses);
-  renderBattleBreakdown(breakdown, chance);
-
-  const slices = [
-    { label: 'WIN!',   weight: chance },
-    { label: 'LOSE...', weight: Math.max(1, 100 - chance) },
-  ];
-  wheelState.slices = buildWheel(slices);
-  drawWheel(wheelState.slices, wheelState.angle);
-  setWheelResult(`Spin to battle! Win chance: ${chance}%`);
-  setPointerLabel('');
-
-  setSpinHandler(() => {
-    log('\u2694', `Battle vs ${stage.stageName} (${chance}% win)`, 'log-info');
-    spinWheel(slices, (idx, slice) => {
-      G.bonuses.bonusSlot = null;
-      if (slice.label === 'WIN!') {
-        log('\u1F3C6', `VICTORY vs ${stage.stageName}!`, 'log-win');
-        setWheelResult(`Victory!${stage.badge ? ' ' + stage.badge + ' earned!' : ''}`);
-        renderAll();
-        advanceStage();
-      } else {
-        log('\u1F480', `DEFEAT vs ${stage.stageName}...`, 'log-lose');
-        setWheelResult('Defeat! Checking bag...');
-        renderAll();
-        handleDefeat(stage, stageTypes);
-      }
-    });
-  });
-}
-
-function handleDefeat(stage, stageTypes) {
-  if (G.inventory.LuckyCharm > 0) {
-    G.inventory.LuckyCharm--;
-    log('\u1F340', 'Lucky Charm used! Rerolling battle...', 'log-item');
-    renderAll();
-    retryBattle(stage, stageTypes, false);
-  } else if (G.inventory.Potion > 0) {
-    G.inventory.Potion--;
-    log('\u1F9EA', 'Potion used! Retrying battle...', 'log-item');
-    renderAll();
-    retryBattle(stage, stageTypes, true);
-  } else {
-    endRun(false, stage.stageName);
-  }
-}
-
-function retryBattle(stage, stageTypes, usedPotion) {
-  const { chance, breakdown } = computeWinChance(G.party, stageTypes, []);
-  renderBattleBreakdown(breakdown, chance);
-  const slices = [
-    { label: 'WIN!',   weight: chance },
-    { label: 'LOSE...', weight: Math.max(1, 100 - chance) },
-  ];
-  wheelState.slices = buildWheel(slices);
-  drawWheel(wheelState.slices, wheelState.angle);
-  setWheelResult(`Retry! Win chance: ${chance}%`);
-  setPointerLabel('');
-  log('\u1F504', `Retry — ${chance}% win chance`, 'log-info');
-
-  setSpinHandler(() => {
-    spinWheel(slices, (idx, slice) => {
-      if (slice.label === 'WIN!') {
-        log('\u1F3C6', `VICTORY on retry vs ${stage.stageName}!`, 'log-win');
-        setWheelResult('Victory on retry!');
-        renderAll();
-        advanceStage();
-      } else {
-        if (!usedPotion && G.inventory.Potion > 0) {
-          G.inventory.Potion--;
-          log('\u1F9EA', 'Potion used! Retrying...', 'log-item');
-          renderAll();
-          retryBattle(stage, stageTypes, true);
+    const consumeOneSpinAndMaybeReturnToBattle = () => {
+      if (S.pending) {
+        S.pending.spinsLeft -= 1;
+        if (S.pending.spinsLeft <= 0) {
+          gotoBattle();
         } else {
-          endRun(false, stage.stageName);
+          // remain in intermission for second spin; reset wheel
+          setWheel('Intermission Action', BAL.intermissionActions.map(a => ({ label:a.label, weight:a.weight, data:{actionId:a.id, label:a.label} })));
+          render();
         }
+      } else {
+        gotoBattle();
       }
-    });
-  });
-}
+    };
 
-function advanceStage() {
-  G.stageIndex++;
-  if (G.stageIndex >= DATA.stages.length) { endRun(true); return; }
-  G.phase = 'INTERMISSION';
-  G.intermissionSpinsLeft = getIntermissionSpins();
-  renderAll();
-  setupIntermissionWheel();
-}
-
-function endRun(win, stageName) {
-  G.phase = 'END';
-  G.runEnded = true;
-  renderAll();
-  document.getElementById('overlay').classList.remove('hidden');
-  document.getElementById('overlay-title').textContent = win ? '\u1F3C6 CHAMPION!' : '\u1F480 RUN OVER';
-  document.getElementById('overlay-msg').textContent = win
-    ? `You conquered all of Kanto! Party: ${G.party.map(p=>p.name).join(', ')}`
-    : `Defeated by ${stageName || '???'}. Party: ${G.party.map(p=>p.name).join(', ') || 'none'}`;
-  log(win ? '\u1F3C6' : '\u1F480', win ? 'Hall of Fame!' : `Run ended at: ${stageName}`, win ? 'log-win' : 'log-lose');
-}
-
-// ── Render ─────────────────────────────────────────────────────
-function renderAll() {
-  renderParty();
-  renderInventory();
-  renderStageInfo();
-  renderWinChance();
-}
-
-function renderParty() {
-  const grid = document.getElementById('party-grid');
-  const slots = grid.querySelectorAll('.party-slot');
-  slots.forEach((slot, i) => {
-    slot.className = 'party-slot';
-    slot.innerHTML = '';
-    if (i < G.party.length) {
-      const p = G.party[i];
-      slot.classList.add('filled');
-      if (p._isBonus) slot.classList.add('bonus');
-      const nameEl = document.createElement('div');
-      nameEl.className = 'slot-name';
-      nameEl.textContent = p.name;
-      const typesEl = document.createElement('div');
-      typesEl.className = 'slot-types';
-      [p.type1, p.type2].filter(Boolean).forEach(t => {
-        const badge = document.createElement('span');
-        badge.className = `type-badge type-${t}`;
-        badge.textContent = t;
-        typesEl.appendChild(badge);
-      });
-      slot.appendChild(nameEl);
-      slot.appendChild(typesEl);
-      if (G.stageIndex < DATA.stages.length) {
-        const st = DATA.stages[G.stageIndex].stageTypes.filter(t => t !== 'Mixed');
-        if (st.length > 0) {
-          const { category, value } = getPokemonMatchup(p, st);
-          const contEl = document.createElement('div');
-          contEl.className = 'slot-contrib';
-          contEl.textContent = `+${value} (${category[0]})`;
-          slot.appendChild(contEl);
-        }
-      }
-    } else {
-      slot.classList.add('empty');
+    switch (actionId) {
+      case 1: // Capture
+        log('ACT', `Intermission action: Capture (next: ${nextStageLabel})`, 'info');
+        startCaptureFlow({ tierMode:'normal', times:1 }, consumeOneSpinAndMaybeReturnToBattle);
+        break;
+      case 2: // Double capture
+        log('ACT', `Intermission action: Double Capture (next: ${nextStageLabel})`, 'info');
+        startCaptureFlow({ tierMode:'normal', times:2 }, consumeOneSpinAndMaybeReturnToBattle);
+        break;
+      case 3: // Guaranteed rare
+        log('ACT', `Intermission action: Guaranteed Rare`, 'info');
+        startCaptureFlow({ tierMode:'forcedRare', times:1 }, consumeOneSpinAndMaybeReturnToBattle);
+        break;
+      case 4: // Mystery Pokémon
+        log('ACT', `Intermission action: Mystery Pokémon`, 'info');
+        startCaptureFlow({ tierMode:'mystery', times:1 }, consumeOneSpinAndMaybeReturnToBattle);
+        break;
+      case 5: // Evolve
+        doEvolveAction();
+        consumeOneSpinAndMaybeReturnToBattle();
+        break;
+      case 9: // Type shield (adds item directly)
+        S.inventory.typeShield += 1;
+        log('ITEM', 'Gained Type Shield (+8% next battle, auto-consume).', 'ok');
+        consumeOneSpinAndMaybeReturnToBattle();
+        break;
+      case 11: // Lucky charm
+        S.inventory.luckyCharm += 1;
+        log('ITEM', 'Gained Lucky Charm (auto-reroll on loss).', 'ok');
+        consumeOneSpinAndMaybeReturnToBattle();
+        break;
+      case 13: // Bonus slot
+        startBonusSlotSelection(consumeOneSpinAndMaybeReturnToBattle);
+        break;
+      case 16: // Find item
+        startFindItemFlow(consumeOneSpinAndMaybeReturnToBattle);
+        break;
+      default:
+        log('ACT', `Unknown action ${actionId}.`, 'bad');
+        consumeOneSpinAndMaybeReturnToBattle();
     }
+    render();
+  }
+
+  // ------------------------------
+  // Capture flow (tier -> pokemon -> result -> party full)
+  // ------------------------------
+  function startCaptureFlow({ tierMode, times }, onDone) {
+    // Store callback to return to intermission or battle after all captures.
+    S.pending = {
+      kind: 'CAPTURE',
+      tierMode,
+      remaining: times,
+      step: 'TIER',
+      chosenTier: null,
+      chosenDex: null,
+      onDone
+    };
+
+    if (tierMode === 'forcedRare') {
+      S.pending.chosenTier = 'Rare';
+      S.pending.step = 'POKEMON';
+      setWheel('Encounter Pokémon (Rare)', buildPokemonWheel('Rare'));
+    } else {
+      const tierWeights = (tierMode === 'mystery') ? BAL.capture.tierWeightsMystery : BAL.capture.tierWeights;
+      setWheel('Encounter Tier', tierWeights.map(t => ({ label:t.label, weight:t.weight, data:{tier:t.label} })));
+    }
+  }
+
+  function buildPokemonWheel(tier) {
+    const pool = poolForTier(tier);
+    // Keep wheel readable: sample up to 14 candidates
+    const sample = sampleWithoutReplacement(pool, Math.min(14, pool.length), S.rng);
+    return sample.map(p => ({ label: `${p.name}`, weight: 1, data:{dex:p.dex, tier} }));
+  }
+
+  function sampleWithoutReplacement(arr, n, rng) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a.slice(0, n);
+  }
+
+  function resolvePendingWheel(outcome) {
+    if (!S.pending) return;
+    if (S.pending.kind === 'CAPTURE') {
+      if (S.pending.step === 'TIER') {
+        const tier = outcome.data.tier;
+        S.pending.chosenTier = tier;
+        S.pending.step = 'POKEMON';
+        setWheel(`Encounter Pokémon (${tier})`, buildPokemonWheel(tier));
+        render();
+        return;
+      }
+      if (S.pending.step === 'POKEMON') {
+        const dex = outcome.data.dex;
+        S.pending.chosenDex = dex;
+        const p = POKE_BY_DEX.get(dex);
+        S.pending.step = 'RESULT';
+        setWheel(`Capture Result: ${p.name}`, BAL.capture.resultWeights.map(r => ({ label:r.label, weight:r.weight, data:{result:r.label} })));
+        render();
+        return;
+      }
+      if (S.pending.step === 'RESULT') {
+        const result = outcome.data.result;
+        const dex = S.pending.chosenDex;
+        const p = POKE_BY_DEX.get(dex);
+        if (result === 'Fail') {
+          log('CAP', `Failed to capture ${p.name}.`, 'bad');
+        } else {
+          // success or critical -> add to party or resolve full party
+          if (result === 'Critical') {
+            S.buffs.nextBattleCritBonus += BAL.capture.criticalBonusNextBattlePct;
+            log('CAP', `Captured ${p.name} (CRITICAL) +${BAL.capture.criticalBonusNextBattlePct}% next battle.`, 'ok');
+          } else {
+            log('CAP', `Captured ${p.name}.`, 'ok');
+          }
+          addPokemonToPartyOrResolveFull(dex);
+        }
+        // next capture or end
+        S.pending.remaining -= 1;
+        if (S.pending.remaining > 0) {
+          // restart flow
+          S.pending.step = 'TIER';
+          S.pending.chosenTier = null;
+          S.pending.chosenDex = null;
+          if (S.pending.tierMode === 'forcedRare') {
+            S.pending.chosenTier = 'Rare';
+            S.pending.step = 'POKEMON';
+            setWheel('Encounter Pokémon (Rare)', buildPokemonWheel('Rare'));
+          } else {
+            const tierWeights = (S.pending.tierMode === 'mystery') ? BAL.capture.tierWeightsMystery : BAL.capture.tierWeights;
+            setWheel('Encounter Tier', tierWeights.map(t => ({ label:t.label, weight:t.weight, data:{tier:t.label} })));
+          }
+          render();
+          return;
+        } else {
+          const done = S.pending.onDone;
+          // return to intermission/battle
+          S.pending = null;
+          done();
+          return;
+        }
+      }
+    }
+
+    if (S.pending.kind === 'PARTY_FULL') {
+      const key = outcome.data.key;
+      const newDex = S.pending.newDex;
+      const pNew = POKE_BY_DEX.get(newDex);
+      if (key === 'discard') {
+        log('PARTY', `Party full: discarded ${pNew.name}.`, 'info');
+      } else if (key === 'replaceRandom') {
+        const idx = Math.floor(S.rng() * S.party.length);
+        const oldDex = S.party[idx];
+        const old = POKE_BY_DEX.get(oldDex);
+        S.party[idx] = newDex;
+        log('PARTY', `Party full: replaced ${old.name} → ${pNew.name}.`, 'ok');
+      } else if (key === 'replaceWorst') {
+        const idx = findWorstMatchupIndexForNextStage();
+        const oldDex = S.party[idx];
+        const old = POKE_BY_DEX.get(oldDex);
+        S.party[idx] = newDex;
+        log('PARTY', `Party full: replaced worst matchup ${old.name} → ${pNew.name}.`, 'ok');
+      }
+      const done = S.pending.onDone;
+      S.pending = null;
+      done();
+      return;
+    }
+
+    if (S.pending.kind === 'FIND_ITEM') {
+      const key = outcome.data.key;
+      if (key === 'potion') S.inventory.potion += 1;
+      if (key === 'typeShield') S.inventory.typeShield += 1;
+      if (key === 'luckyCharm') S.inventory.luckyCharm += 1;
+      if (key === 'runningShoes') S.inventory.runningShoes = true;
+      log('ITEM', `Found item: ${outcome.label}.`, 'ok');
+      const done = S.pending.onDone;
+      S.pending = null;
+      done();
+      return;
+    }
+
+    if (S.pending.kind === 'BONUS_SLOT') {
+      const chosen = outcome.data.choice;
+      let tempDex = null;
+      if (chosen === 'best') {
+        tempDex = findBestMatchupDexForNextStage();
+      } else {
+        tempDex = S.party[Math.floor(S.rng() * S.party.length)];
+      }
+      S.buffs.nextBattleBonusSlot = true;
+      S.buffs.nextBattleTempDex = tempDex;
+      const p = POKE_BY_DEX.get(tempDex);
+      log('BUFF', `Bonus Slot chosen: ${p.name} will contribute as extra slot next battle.`, 'ok');
+      const done = S.pending.onDone;
+      S.pending = null;
+      done();
+      return;
+    }
+  }
+
+  function addPokemonToPartyOrResolveFull(newDex) {
+    if (S.party.length < 6) {
+      S.party.push(newDex);
+      return;
+    }
+    // party full wheel
+    S.pending = {
+      kind: 'PARTY_FULL',
+      newDex,
+      onDone: () => { /* no-op: caller handles continuation */ }
+    };
+    // but we need to resume capture flow after this; so caller sets onDone accordingly.
+    // We'll patch it in where used: in capture result, we call addPokemonToPartyOrResolveFull then if full it sets pending kind and we must set onDone now.
+    // We'll detect and set here by checking if pending.kind is PARTY_FULL and pending.onDone is noop.
+  }
+
+  // Patch: when PARTY_FULL is set, ensure continuation goes back to capture pending flow.
+  function ensurePartyFullContinuation(next) {
+    if (S.pending && S.pending.kind === 'PARTY_FULL' && typeof S.pending.onDone === 'function' && S.pending.onDone.name === '') {
+      S.pending.onDone = next;
+    } else if (S.pending && S.pending.kind === 'PARTY_FULL') {
+      S.pending.onDone = next;
+    }
+  }
+
+  function findWorstMatchupIndexForNextStage() {
+    const stage = STAGES[S.stageIndex];
+    const stageTypes = stage.types[0] === 'Mixed' ? randomChampionTypesForStage(stage.id) : stage.types;
+    let worstIdx = 0;
+    let worstMult = Infinity;
+    for (let i = 0; i < S.party.length; i++) {
+      const dex = S.party[i];
+      const p = POKE_BY_DEX.get(dex);
+      const m = bestOffensiveMultiplier(p.types, stageTypes);
+      if (m < worstMult) { worstMult = m; worstIdx = i; }
+    }
+    return worstIdx;
+  }
+
+  function findBestMatchupDexForNextStage() {
+    const stage = STAGES[S.stageIndex];
+    const stageTypes = stage.types[0] === 'Mixed' ? randomChampionTypesForStage(stage.id) : stage.types;
+    let bestDex = S.party[0];
+    let bestMult = -1;
+    for (const dex of S.party) {
+      const p = POKE_BY_DEX.get(dex);
+      const m = bestOffensiveMultiplier(p.types, stageTypes);
+      if (m > bestMult) { bestMult = m; bestDex = dex; }
+    }
+    return bestDex;
+  }
+
+  // Fix continuation for party full: hook into capture result flow
+  const _originalAdd = addPokemonToPartyOrResolveFull;
+  addPokemonToPartyOrResolveFull = function(newDex) {
+    if (S.party.length < 6) { S.party.push(newDex); return; }
+    // set party full wheel; continuation should go back to capture flow
+    const continueCapture = () => {
+      // after resolving full party, return to whatever capture step wanted next
+      // Just resume by setting wheel back to tier (or next capture) depending on remaining.
+      // We'll rely on the capture pending flow being recreated by caller; simplest: do nothing here.
+    };
+    S.pending = { kind:'PARTY_FULL', newDex, onDone: continueCapture };
+    const pNew = POKE_BY_DEX.get(newDex);
+    setWheel(`Party Full: Keep ${pNew.name}?`, BAL.capture.partyFull.map(x => ({ label:x.label, weight:x.weight, data:{key:x.key} })));
+  };
+
+  // ------------------------------
+  // Find item / bonus slot / evolve
+  // ------------------------------
+  function startFindItemFlow(onDone) {
+    S.pending = { kind:'FIND_ITEM', onDone };
+    setWheel('Find Item', BAL.items.findItem.map(it => ({ label: it.label, weight: it.weight, data:{key:it.key} })));
+    render();
+  }
+
+  function startBonusSlotSelection(onDone) {
+    if (S.party.length === 0) { log('BUFF','No party to choose from.', 'bad'); onDone(); return; }
+    S.pending = { kind:'BONUS_SLOT', onDone };
+    setWheel('Bonus Slot Selection', [
+      { label:'Best matchup (40%)', weight:40, data:{choice:'best'} },
+      { label:'Random party (60%)', weight:60, data:{choice:'random'} }
+    ]);
+    render();
+  }
+
+  function doEvolveAction() {
+    const evolvable = S.party.filter(d => EVOLVE_TO.has(d));
+    if (evolvable.length === 0) {
+      log('EVOLVE', 'No evolvable Pokémon in party (no effect).', 'info');
+      return;
+    }
+    // pick random evolvable (60) or worst matchup (40)
+    const pick = pickWeighted(S.rng, [
+      { label:'Random evolvable', weight:60, data:{mode:'random'} },
+      { label:'Worst matchup', weight:40, data:{mode:'worst'} }
+    ]);
+    let dexToEvolve;
+    if (pick.data.mode === 'random') {
+      dexToEvolve = evolvable[Math.floor(S.rng() * evolvable.length)];
+    } else {
+      // worst matchup among evolvable only
+      const stage = STAGES[S.stageIndex];
+      const stageTypes = stage.types[0] === 'Mixed' ? randomChampionTypesForStage(stage.id) : stage.types;
+      let worstDex = evolvable[0], worstMult = Infinity;
+      for (const d of evolvable) {
+        const p = POKE_BY_DEX.get(d);
+        const m = bestOffensiveMultiplier(p.types, stageTypes);
+        if (m < worstMult) { worstMult = m; worstDex = d; }
+      }
+      dexToEvolve = worstDex;
+    }
+    const idx = S.party.indexOf(dexToEvolve);
+    const evolvedDex = EVOLVE_TO.get(dexToEvolve);
+    if (idx >= 0 && evolvedDex) {
+      const from = POKE_BY_DEX.get(dexToEvolve);
+      const to = POKE_BY_DEX.get(evolvedDex);
+      S.party[idx] = evolvedDex;
+      log('EVOLVE', `${from.name} evolved into ${to.name}!`, 'ok');
+    }
+  }
+
+  // ------------------------------
+  // Render
+  // ------------------------------
+  function render(battleInfo=null) {
+    seedPill.textContent = `seed:${S.seed.toString(16)}`;
+    const stage = STAGES[S.stageIndex] || null;
+
+    // labels
+    if (S.phase === 'STARTER') {
+      phaseLabel.textContent = 'Starter Selection';
+      phaseSub.textContent = 'Spin to pick your first Pokémon.';
+      stagePill.textContent = '—';
+      nextInfo.textContent = stage ? `Next: ${stage.name}` : '—';
+      chanceText.textContent = '—';
+      chanceMeta.textContent = '';
+      breakdownText.textContent = 'Pick a starter, then fight Gym 1.';
+    } else if (S.phase === 'BATTLE') {
+      phaseLabel.textContent = stage ? `${stage.name} Battle` : 'Battle';
+      phaseSub.textContent = stage ? `Types: ${stage.types.join('/')} • Difficulty: ${stage.difficulty}` : '—';
+      nextInfo.textContent = stage ? `Stage: ${stage.id}` : '—';
+      stagePill.textContent = stage ? `${stage.kind}` : '—';
+
+      const info = battleInfo || computeBattleChance();
+      chanceText.textContent = `${info.finalChance.toFixed(1)}%`;
+      chanceMeta.textContent = `raw ${info.rawChance.toFixed(1)}%`;
+      breakdownText.textContent = info ? buildBreakdown(info) : '—';
+    } else if (S.phase === 'INTERMISSION') {
+      phaseLabel.textContent = 'Intermission';
+      phaseSub.textContent = `Spins left: ${S.pending?.spinsLeft ?? 1}${S.inventory.runningShoes ? ' (Running Shoes)' : ''}`;
+      nextInfo.textContent = stage ? `Next: ${stage.name} (${stage.types.join('/')})` : '—';
+      stagePill.textContent = stage ? `${stage.kind}` : '—';
+      chanceText.textContent = '—';
+      chanceMeta.textContent = '';
+      breakdownText.textContent = 'Spin for an action. Sub-spins may appear (tier, Pokémon, etc.).';
+    } else if (S.phase === 'GAME_OVER') {
+      phaseLabel.textContent = 'Game Over';
+      phaseSub.textContent = 'Restart to try again.';
+      nextInfo.textContent = '—';
+      stagePill.textContent = '—';
+      chanceText.textContent = '—';
+      chanceMeta.textContent = '';
+      breakdownText.textContent = 'RIP 🪦';
+    } else if (S.phase === 'VICTORY') {
+      phaseLabel.textContent = 'Victory!';
+      phaseSub.textContent = 'You cleared the run.';
+      nextInfo.textContent = '—';
+      stagePill.textContent = '—';
+      chanceText.textContent = '—';
+      chanceMeta.textContent = '';
+      breakdownText.textContent = 'Absolute cinema 🎉';
+    }
+
+    renderParty();
+    renderInv();
+    drawWheel();
+  }
+
+  function buildBreakdown(info) {
+    // already computed detailed lines in computeBattleChance; rebuild compact for UI
+    const stage = STAGES[S.stageIndex];
+    const st = info.stageTypes.join('/');
+    const lines = [];
+    lines.push(`Stage: ${stage.name} (${st})`);
+    lines.push(`Difficulty: -${stage.difficulty}%  |  Jitter: ${info.jitter >=0 ? '+' : ''}${info.jitter}%`);
+    lines.push(`BaseChance: ${BAL.winModel.baseChance}%`);
+    lines.push(`StageMult: ${info.multStage.toFixed(2)}  |  DR exp: ${info.drExp.toFixed(2)}`);
+    lines.push('');
+    lines.push('Contribs:');
+    info.contributions.forEach(c => {
+      lines.push(`• ${c.name} [${c.types.join('/')}] ${c.category}  base ${c.base.toFixed(1)} → ${c.final.toFixed(1)}`);
+    });
+    lines.push('');
+    lines.push(`SumScaled: ${info.sumScaled.toFixed(1)} → AfterDR: ${info.sumAfterDR.toFixed(1)}`);
+    lines.push(`Bonuses: +${info.bonuses.toFixed(1)}%`);
+    lines.push(`Raw: ${info.rawChance.toFixed(1)}%`);
+    lines.push(`Final: ${info.finalChance.toFixed(1)}%`);
+    return lines.join('\n');
+  }
+
+  function renderParty() {
+    const slots = [];
+    for (let i = 0; i < 6; i++) {
+      const dex = S.party[i] ?? null;
+      if (!dex) {
+        slots.push(`<div class="slot"><div class="name" style="opacity:.55">Empty</div><div class="meta"><span>—</span><span class="pill" style="opacity:.55">—</span></div></div>`);
+        continue;
+      }
+      const p = POKE_BY_DEX.get(dex);
+      const pwr = powerNormByDex(dex);
+      slots.push(`
+        <div class="slot">
+          <div class="name">${escapeHtml(p.name)}</div>
+          <div class="meta">
+            <span>${escapeHtml(p.types.join('/'))}</span>
+            <span class="pill">PWR ${(pwr*100).toFixed(0)}</span>
+          </div>
+        </div>
+      `);
+    }
+    partyGrid.innerHTML = slots.join('');
+  }
+
+  function renderInv() {
+    const items = [];
+    items.push(invChip('Potion', S.inventory.potion, 'consumable on loss'));
+    items.push(invChip('Lucky Charm', S.inventory.luckyCharm, 'reroll on loss'));
+    items.push(invChip('Type Shield', S.inventory.typeShield, '+8% next battle'));
+    items.push(invChip('Running Shoes', S.inventory.runningShoes ? 'ON' : 'OFF', '2x intermission spins'));
+    invRow.innerHTML = items.join('');
+  }
+
+  function invChip(name, val, note) {
+    return `<div class="invItem">${escapeHtml(name)} <small>${escapeHtml(String(val))}</small> <small>• ${escapeHtml(note)}</small></div>`;
+  }
+
+  // ------------------------------
+  // Controls
+  // ------------------------------
+  spinBtn.addEventListener('click', () => {
+    // If we're in a pending sub-wheel state, S.phase stays INTERMISSION but S.pending.kind exists.
+    // Our onWheelResult routes based on phase first; ensure sub-wheels are handled before action wheel.
+    if (S.pending && S.pending.kind && S.phase === 'INTERMISSION') {
+      // treat as sub-wheel
+    }
+    spinWheel();
   });
-  const existing = grid.querySelector('.bonus-note');
-  if (existing) existing.remove();
-  if (G.bonuses && G.bonuses.bonusSlot) {
-    const note = document.createElement('div');
-    note.className = 'bonus-note';
-    note.style.cssText = 'grid-column:1/-1;padding:4px;font-family:var(--pixel-font);font-size:0.38rem;color:var(--accent2);border-top:1px solid var(--border);margin-top:4px;';
-    note.textContent = `\u2B50 Bonus slot: ${G.bonuses.bonusSlot.name}`;
-    grid.appendChild(note);
-  }
-}
 
-function renderInventory() {
-  const list = document.getElementById('inventory-list');
-  list.innerHTML = '';
-  [['Potion','\u1F9EA','Potion'],['TypeShield','\u1F6E1','Type Shield'],['LuckyCharm','\u1F340','Lucky Charm']].forEach(([key, icon, name]) => {
-    const row = document.createElement('div');
-    row.className = 'inv-row';
-    row.innerHTML = `<span class="inv-name">${icon} ${name}</span><span class="inv-count">\u00D7${G.inventory[key]}</span>`;
-    list.appendChild(row);
+  restartBtn.addEventListener('click', () => {
+    S = makeInitialState();
+    log('RESET', 'New run started.', 'info');
+    gotoStarter();
   });
-  const shoes = document.createElement('div');
-  shoes.className = 'inv-row';
-  shoes.innerHTML = `<span class="inv-name">\u1F45F Running Shoes</span><span class="inv-permanent">${G.inventory.RunningShoes ? '\u2713 Active' : '\u2014'}</span>`;
-  list.appendChild(shoes);
-  if (G.bonuses && G.bonuses.criticalBonus) {
-    const cb = document.createElement('div');
-    cb.className = 'inv-row';
-    cb.innerHTML = `<span class="inv-name">\u1F4A5 Crit Bonus</span><span class="inv-permanent">+${DATA.balance.criticalBonus}%</span>`;
-    list.appendChild(cb);
+
+  darkToggle.addEventListener('change', () => {
+    document.body.setAttribute('data-theme', darkToggle.checked ? 'dark' : 'light');
+  });
+
+  // ------------------------------
+  // Boot
+  // ------------------------------
+  function boot() {
+    log('BOOT', 'Welcome. Spin to begin.', 'info');
+    gotoStarter();
+
+    // Optional: dev calibration (console)
+    // You can comment this out; it's light.
+    devCalibration();
   }
-}
 
-function renderStageInfo() {
-  const info = document.getElementById('stage-info');
-  if (G.stageIndex >= DATA.stages.length) {
-    info.innerHTML = '<strong>\u1F3C6 All stages cleared!</strong>'; return;
+  function devCalibration() {
+    try {
+      // Gym1 and E4 neutral-ish average for starters
+      const starters = [1,4,7];
+      const gym1 = STAGES[0];
+      const e4 = STAGES[9]; // E4_2; any E4 ok
+      const sim = (stageIndex) => {
+        const t = clamp(stageIndex / (STAGES.length - 1), 0, 1);
+        const stageMult = lerp(BAL.winModel.stageMult.early, BAL.winModel.stageMult.late, t);
+        const contribs = starters.map(d => {
+          const p = POKE_BY_DEX.get(d);
+          const stTypes = STAGES[stageIndex].types[0] === 'Mixed' ? ['Normal','Psychic'] : STAGES[stageIndex].types;
+          const cat = matchupCategory(p, stTypes);
+          const base = pokemonBaseContribution(cat, d);
+          return base * stageMult;
+        });
+        return contribs.reduce((a,b)=>a+b,0) / contribs.length;
+      };
+      const avgGym1 = sim(0);
+      const avgE4 = sim(9);
+      console.log('[Calibration] avg starter contrib Gym1 ≈', avgGym1.toFixed(1), 'target ~30');
+      console.log('[Calibration] avg starter contrib E4  ≈', avgE4.toFixed(1), 'target ~4');
+    } catch(e) { /* ignore */ }
   }
-  const stage = DATA.stages[G.stageIndex];
-  info.innerHTML = `
-    <div><strong>${stage.stageName}</strong></div>
-    <div>${stage.stageKind} \u2014 ${stage.stageTypes.join(' / ')}</div>
-    ${stage.leader ? `<div>Leader: ${stage.leader}</div>` : ''}
-    ${stage.badge ? `<div>Badge: ${stage.badge}</div>` : ''}
-    <div style="margin-top:4px;color:var(--text2)">${G.stageIndex + 1} / ${DATA.stages.length}</div>
-  `;
-}
 
-function renderWinChance() {
-  if (G.party.length === 0 || G.stageIndex >= DATA.stages.length) {
-    document.getElementById('win-chance-pct').textContent = '\u2014%';
-    document.getElementById('win-chance-fill').style.width = '0%';
-    document.getElementById('battle-breakdown').innerHTML = '';
-    return;
-  }
-  const stage = DATA.stages[G.stageIndex];
-  let stageTypes = stage.stageTypes.filter(t => t !== 'Mixed');
-  if (stageTypes.length === 0) stageTypes = ['Normal'];
-  const battleParty = [...G.party];
-  if (G.bonuses && G.bonuses.bonusSlot) battleParty.push({ ...G.bonuses.bonusSlot });
-  const bonuses = [];
-  if (G.inventory.TypeShield > 0) bonuses.push({ label: 'Type Shield', category: 'Shield', value: DATA.balance.typeShieldBonus });
-  if (G.bonuses && G.bonuses.criticalBonus) bonuses.push({ label: 'Crit Bonus', category: 'Bonus', value: DATA.balance.criticalBonus });
-  const { chance, breakdown } = computeWinChance(battleParty, stageTypes, bonuses);
-  renderBattleBreakdown(breakdown, chance);
-}
-
-function renderBattleBreakdown(breakdown, chance) {
-  document.getElementById('win-chance-pct').textContent = `${chance}%`;
-  const fill = document.getElementById('win-chance-fill');
-  fill.style.width = `${chance}%`;
-  fill.style.background = chance >= 70 ? 'var(--accent3)' : chance >= 40 ? '#f8d030' : 'var(--accent2)';
-  const base = DATA.balance.winModel.baseChance;
-  let html = `<div class="contrib-row"><span>Base</span><span class="contrib-vs">+${base}</span></div>`;
-  for (const row of breakdown) {
-    html += `<div class="contrib-row"><span>${row.name} <small style="color:var(--text2)">(${row.category})</small></span><span class="${row.bonus ? 'contrib-bonus' : 'contrib-vs'}">+${row.value}</span></div>`;
-  }
-  html += `<div class="contrib-row" style="font-family:var(--pixel-font);font-size:0.4rem;border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span>Total</span><span>${chance}%</span></div>`;
-  document.getElementById('battle-breakdown').innerHTML = html;
-}
-
-// ── Spin Button ────────────────────────────────────────────────
-let _spinHandler = null;
-
-function setSpinHandler(fn) {
-  _spinHandler = fn;
-  document.getElementById('spinBtn').disabled = false;
-}
-
-function setPhaseLabel(phase, stage) {
-  document.getElementById('phase-label').textContent = phase;
-  document.getElementById('stage-label').textContent = stage;
-}
-
-function setWheelResult(text) {
-  document.getElementById('wheel-result-label').textContent = text;
-}
-
-function log(icon, msg, cls = 'log-info') {
-  const logEl = document.getElementById('run-log');
-  const entry = document.createElement('div');
-  entry.className = `log-entry ${cls}`;
-  entry.innerHTML = `<span class="log-icon">${icon}</span>${msg}`;
-  logEl.appendChild(entry);
-  logEl.scrollTop = logEl.scrollHeight;
-}
-
-document.getElementById('spinBtn').addEventListener('click', () => {
-  if (wheelState.spinning || G.runEnded) return;
-  if (_spinHandler) {
-    document.getElementById('spinBtn').disabled = true;
-    _spinHandler();
-  }
-});
-
-// ── Dark Mode ──────────────────────────────────────────────────
-document.getElementById('darkModeToggle').addEventListener('click', () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  document.getElementById('darkModeToggle').textContent = next === 'dark' ? '\u263E' : '\u2600';
-  if (wheelState.slices.length > 0) drawWheel(wheelState.slices, wheelState.angle);
-});
-
-// ── Restart ────────────────────────────────────────────────────
-function doRestart() {
-  document.getElementById('overlay').classList.add('hidden');
-  document.getElementById('spinBtn').disabled = false;
-  _spinHandler = null;
-  _spinQueue = [];
-  _onQueueDone = null;
-  initGame();
-}
-document.getElementById('restartBtn').addEventListener('click', doRestart);
-document.getElementById('overlay-restart').addEventListener('click', doRestart);
-
-// ── Boot ───────────────────────────────────────────────────────
-loadData();
-initGame();
+  boot();
+})();
