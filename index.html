@@ -685,159 +685,7 @@ body {
    ============================================================ */
 
 // ── Inlined Game Data ──────────────────────────────────────────
-const INLINE_POKEDEX = [
-  {"dexNumber":1,"name":"Bulbasaur","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":2},
-  {"dexNumber":2,"name":"Ivysaur","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":3},
-  {"dexNumber":3,"name":"Venusaur","type1":"Grass","type2":"Poison","tier":"Rare","evolvesTo":null},
-  {"dexNumber":4,"name":"Charmander","type1":"Fire","type2":null,"tier":"Common","evolvesTo":5},
-  {"dexNumber":5,"name":"Charmeleon","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":6},
-  {"dexNumber":6,"name":"Charizard","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":7,"name":"Squirtle","type1":"Water","type2":null,"tier":"Common","evolvesTo":8},
-  {"dexNumber":8,"name":"Wartortle","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":9},
-  {"dexNumber":9,"name":"Blastoise","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":10,"name":"Caterpie","type1":"Bug","type2":null,"tier":"Common","evolvesTo":11},
-  {"dexNumber":11,"name":"Metapod","type1":"Bug","type2":null,"tier":"Common","evolvesTo":12},
-  {"dexNumber":12,"name":"Butterfree","type1":"Bug","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":13,"name":"Weedle","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":14},
-  {"dexNumber":14,"name":"Kakuna","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":15},
-  {"dexNumber":15,"name":"Beedrill","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":16,"name":"Pidgey","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":17},
-  {"dexNumber":17,"name":"Pidgeotto","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":18},
-  {"dexNumber":18,"name":"Pidgeot","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":19,"name":"Rattata","type1":"Normal","type2":null,"tier":"Common","evolvesTo":20},
-  {"dexNumber":20,"name":"Raticate","type1":"Normal","type2":null,"tier":"Common","evolvesTo":null},
-  {"dexNumber":21,"name":"Spearow","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":22},
-  {"dexNumber":22,"name":"Fearow","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":23,"name":"Ekans","type1":"Poison","type2":null,"tier":"Common","evolvesTo":24},
-  {"dexNumber":24,"name":"Arbok","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":25,"name":"Pikachu","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":26},
-  {"dexNumber":26,"name":"Raichu","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":27,"name":"Sandshrew","type1":"Ground","type2":null,"tier":"Common","evolvesTo":28},
-  {"dexNumber":28,"name":"Sandslash","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":29,"name":"Nidoran-F","type1":"Poison","type2":null,"tier":"Common","evolvesTo":30},
-  {"dexNumber":30,"name":"Nidorina","type1":"Poison","type2":null,"tier":"Common","evolvesTo":31},
-  {"dexNumber":31,"name":"Nidoqueen","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":32,"name":"Nidoran-M","type1":"Poison","type2":null,"tier":"Common","evolvesTo":33},
-  {"dexNumber":33,"name":"Nidorino","type1":"Poison","type2":null,"tier":"Common","evolvesTo":34},
-  {"dexNumber":34,"name":"Nidoking","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":35,"name":"Clefairy","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":36},
-  {"dexNumber":36,"name":"Clefable","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":37,"name":"Vulpix","type1":"Fire","type2":null,"tier":"Common","evolvesTo":38},
-  {"dexNumber":38,"name":"Ninetales","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":39,"name":"Jigglypuff","type1":"Normal","type2":null,"tier":"Common","evolvesTo":40},
-  {"dexNumber":40,"name":"Wigglytuff","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":41,"name":"Zubat","type1":"Poison","type2":"Flying","tier":"Common","evolvesTo":42},
-  {"dexNumber":42,"name":"Golbat","type1":"Poison","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":43,"name":"Oddish","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":44},
-  {"dexNumber":44,"name":"Gloom","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":45},
-  {"dexNumber":45,"name":"Vileplume","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":46,"name":"Paras","type1":"Bug","type2":"Grass","tier":"Common","evolvesTo":47},
-  {"dexNumber":47,"name":"Parasect","type1":"Bug","type2":"Grass","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":48,"name":"Venonat","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":49},
-  {"dexNumber":49,"name":"Venomoth","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":50,"name":"Diglett","type1":"Ground","type2":null,"tier":"Common","evolvesTo":51},
-  {"dexNumber":51,"name":"Dugtrio","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":52,"name":"Meowth","type1":"Normal","type2":null,"tier":"Common","evolvesTo":53},
-  {"dexNumber":53,"name":"Persian","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":54,"name":"Psyduck","type1":"Water","type2":null,"tier":"Common","evolvesTo":55},
-  {"dexNumber":55,"name":"Golduck","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":56,"name":"Mankey","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":57},
-  {"dexNumber":57,"name":"Primeape","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":58,"name":"Growlithe","type1":"Fire","type2":null,"tier":"Common","evolvesTo":59},
-  {"dexNumber":59,"name":"Arcanine","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":60,"name":"Poliwag","type1":"Water","type2":null,"tier":"Common","evolvesTo":61},
-  {"dexNumber":61,"name":"Poliwhirl","type1":"Water","type2":null,"tier":"Common","evolvesTo":62},
-  {"dexNumber":62,"name":"Poliwrath","type1":"Water","type2":"Fighting","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":63,"name":"Abra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":64},
-  {"dexNumber":64,"name":"Kadabra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":65},
-  {"dexNumber":65,"name":"Alakazam","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":66,"name":"Machop","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":67},
-  {"dexNumber":67,"name":"Machoke","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":68},
-  {"dexNumber":68,"name":"Machamp","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":69,"name":"Bellsprout","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":70},
-  {"dexNumber":70,"name":"Weepinbell","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":71},
-  {"dexNumber":71,"name":"Victreebel","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":72,"name":"Tentacool","type1":"Water","type2":"Poison","tier":"Common","evolvesTo":73},
-  {"dexNumber":73,"name":"Tentacruel","type1":"Water","type2":"Poison","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":74,"name":"Geodude","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":75},
-  {"dexNumber":75,"name":"Graveler","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":76},
-  {"dexNumber":76,"name":"Golem","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":77,"name":"Ponyta","type1":"Fire","type2":null,"tier":"Common","evolvesTo":78},
-  {"dexNumber":78,"name":"Rapidash","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":79,"name":"Slowpoke","type1":"Water","type2":"Psychic","tier":"Common","evolvesTo":80},
-  {"dexNumber":80,"name":"Slowbro","type1":"Water","type2":"Psychic","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":81,"name":"Magnemite","type1":"Electric","type2":null,"tier":"Common","evolvesTo":82},
-  {"dexNumber":82,"name":"Magneton","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":83,"name":"Farfetch'd","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":84,"name":"Doduo","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":85},
-  {"dexNumber":85,"name":"Dodrio","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":86,"name":"Seel","type1":"Water","type2":null,"tier":"Common","evolvesTo":87},
-  {"dexNumber":87,"name":"Dewgong","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":88,"name":"Grimer","type1":"Poison","type2":null,"tier":"Common","evolvesTo":89},
-  {"dexNumber":89,"name":"Muk","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":90,"name":"Shellder","type1":"Water","type2":null,"tier":"Common","evolvesTo":91},
-  {"dexNumber":91,"name":"Cloyster","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":92,"name":"Gastly","type1":"Ghost","type2":"Poison","tier":"Common","evolvesTo":93},
-  {"dexNumber":93,"name":"Haunter","type1":"Ghost","type2":"Poison","tier":"Uncommon","evolvesTo":94},
-  {"dexNumber":94,"name":"Gengar","type1":"Ghost","type2":"Poison","tier":"Rare","evolvesTo":null},
-  {"dexNumber":95,"name":"Onix","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":96,"name":"Drowzee","type1":"Psychic","type2":null,"tier":"Common","evolvesTo":97},
-  {"dexNumber":97,"name":"Hypno","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":98,"name":"Krabby","type1":"Water","type2":null,"tier":"Common","evolvesTo":99},
-  {"dexNumber":99,"name":"Kingler","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":100,"name":"Voltorb","type1":"Electric","type2":null,"tier":"Common","evolvesTo":101},
-  {"dexNumber":101,"name":"Electrode","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":102,"name":"Exeggcute","type1":"Grass","type2":"Psychic","tier":"Common","evolvesTo":103},
-  {"dexNumber":103,"name":"Exeggutor","type1":"Grass","type2":"Psychic","tier":"Rare","evolvesTo":null},
-  {"dexNumber":104,"name":"Cubone","type1":"Ground","type2":null,"tier":"Common","evolvesTo":105},
-  {"dexNumber":105,"name":"Marowak","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":106,"name":"Hitmonlee","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":107,"name":"Hitmonchan","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":108,"name":"Lickitung","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":109,"name":"Koffing","type1":"Poison","type2":null,"tier":"Common","evolvesTo":110},
-  {"dexNumber":110,"name":"Weezing","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":111,"name":"Rhyhorn","type1":"Ground","type2":"Rock","tier":"Common","evolvesTo":112},
-  {"dexNumber":112,"name":"Rhydon","type1":"Ground","type2":"Rock","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":113,"name":"Chansey","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":114,"name":"Tangela","type1":"Grass","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":115,"name":"Kangaskhan","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":116,"name":"Horsea","type1":"Water","type2":null,"tier":"Common","evolvesTo":117},
-  {"dexNumber":117,"name":"Seadra","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":118,"name":"Goldeen","type1":"Water","type2":null,"tier":"Common","evolvesTo":119},
-  {"dexNumber":119,"name":"Seaking","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":120,"name":"Staryu","type1":"Water","type2":null,"tier":"Common","evolvesTo":121},
-  {"dexNumber":121,"name":"Starmie","type1":"Water","type2":"Psychic","tier":"Rare","evolvesTo":null},
-  {"dexNumber":122,"name":"Mr. Mime","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":123,"name":"Scyther","type1":"Bug","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":124,"name":"Jynx","type1":"Ice","type2":"Psychic","tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":125,"name":"Electabuzz","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":126,"name":"Magmar","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":127,"name":"Pinsir","type1":"Bug","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":128,"name":"Tauros","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":129,"name":"Magikarp","type1":"Water","type2":null,"tier":"Common","evolvesTo":130},
-  {"dexNumber":130,"name":"Gyarados","type1":"Water","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":131,"name":"Lapras","type1":"Water","type2":"Ice","tier":"Rare","evolvesTo":null},
-  {"dexNumber":132,"name":"Ditto","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null},
-  {"dexNumber":133,"name":"Eevee","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":136},
-  {"dexNumber":134,"name":"Vaporeon","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":135,"name":"Jolteon","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":136,"name":"Flareon","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":137,"name":"Porygon","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":138,"name":"Omanyte","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":139},
-  {"dexNumber":139,"name":"Omastar","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null},
-  {"dexNumber":140,"name":"Kabuto","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":141},
-  {"dexNumber":141,"name":"Kabutops","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null},
-  {"dexNumber":142,"name":"Aerodactyl","type1":"Rock","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":143,"name":"Snorlax","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":144,"name":"Articuno","type1":"Ice","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":145,"name":"Zapdos","type1":"Electric","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":146,"name":"Moltres","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":147,"name":"Dratini","type1":"Dragon","type2":null,"tier":"Uncommon","evolvesTo":148},
-  {"dexNumber":148,"name":"Dragonair","type1":"Dragon","type2":null,"tier":"Rare","evolvesTo":149},
-  {"dexNumber":149,"name":"Dragonite","type1":"Dragon","type2":"Flying","tier":"Rare","evolvesTo":null},
-  {"dexNumber":150,"name":"Mewtwo","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null},
-  {"dexNumber":151,"name":"Mew","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null}
-];
+const INLINE_POKEDEX = [{"dexNumber":1,"name":"Bulbasaur","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":2,"bst":318},{"dexNumber":2,"name":"Ivysaur","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":3,"bst":405},{"dexNumber":3,"name":"Venusaur","type1":"Grass","type2":"Poison","tier":"Rare","evolvesTo":null,"bst":525},{"dexNumber":4,"name":"Charmander","type1":"Fire","type2":null,"tier":"Common","evolvesTo":5,"bst":309},{"dexNumber":5,"name":"Charmeleon","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":6,"bst":405},{"dexNumber":6,"name":"Charizard","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":534},{"dexNumber":7,"name":"Squirtle","type1":"Water","type2":null,"tier":"Common","evolvesTo":8,"bst":314},{"dexNumber":8,"name":"Wartortle","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":9,"bst":405},{"dexNumber":9,"name":"Blastoise","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null,"bst":530},{"dexNumber":10,"name":"Caterpie","type1":"Bug","type2":null,"tier":"Common","evolvesTo":11,"bst":195},{"dexNumber":11,"name":"Metapod","type1":"Bug","type2":null,"tier":"Common","evolvesTo":12,"bst":205},{"dexNumber":12,"name":"Butterfree","type1":"Bug","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":395},{"dexNumber":13,"name":"Weedle","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":14,"bst":195},{"dexNumber":14,"name":"Kakuna","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":15,"bst":205},{"dexNumber":15,"name":"Beedrill","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":395},{"dexNumber":16,"name":"Pidgey","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":17,"bst":251},{"dexNumber":17,"name":"Pidgeotto","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":18,"bst":349},{"dexNumber":18,"name":"Pidgeot","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":479},{"dexNumber":19,"name":"Rattata","type1":"Normal","type2":null,"tier":"Common","evolvesTo":20,"bst":253},{"dexNumber":20,"name":"Raticate","type1":"Normal","type2":null,"tier":"Common","evolvesTo":null,"bst":413},{"dexNumber":21,"name":"Spearow","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":22,"bst":262},{"dexNumber":22,"name":"Fearow","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":442},{"dexNumber":23,"name":"Ekans","type1":"Poison","type2":null,"tier":"Common","evolvesTo":24,"bst":288},{"dexNumber":24,"name":"Arbok","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":438},{"dexNumber":25,"name":"Pikachu","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":26,"bst":320},{"dexNumber":26,"name":"Raichu","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null,"bst":485},{"dexNumber":27,"name":"Sandshrew","type1":"Ground","type2":null,"tier":"Common","evolvesTo":28,"bst":300},{"dexNumber":28,"name":"Sandslash","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":450},{"dexNumber":29,"name":"Nidoran-F","type1":"Poison","type2":null,"tier":"Common","evolvesTo":30,"bst":275},{"dexNumber":30,"name":"Nidorina","type1":"Poison","type2":null,"tier":"Common","evolvesTo":31,"bst":365},{"dexNumber":31,"name":"Nidoqueen","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null,"bst":505},{"dexNumber":32,"name":"Nidoran-M","type1":"Poison","type2":null,"tier":"Common","evolvesTo":33,"bst":273},{"dexNumber":33,"name":"Nidorino","type1":"Poison","type2":null,"tier":"Common","evolvesTo":34,"bst":365},{"dexNumber":34,"name":"Nidoking","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null,"bst":505},{"dexNumber":35,"name":"Clefairy","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":36,"bst":323},{"dexNumber":36,"name":"Clefable","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":483},{"dexNumber":37,"name":"Vulpix","type1":"Fire","type2":null,"tier":"Common","evolvesTo":38,"bst":299},{"dexNumber":38,"name":"Ninetales","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":505},{"dexNumber":39,"name":"Jigglypuff","type1":"Normal","type2":null,"tier":"Common","evolvesTo":40,"bst":270},{"dexNumber":40,"name":"Wigglytuff","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":435},{"dexNumber":41,"name":"Zubat","type1":"Poison","type2":"Flying","tier":"Common","evolvesTo":42,"bst":261},{"dexNumber":42,"name":"Golbat","type1":"Poison","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":455},{"dexNumber":43,"name":"Oddish","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":44,"bst":270},{"dexNumber":44,"name":"Gloom","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":45,"bst":395},{"dexNumber":45,"name":"Vileplume","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":490},{"dexNumber":46,"name":"Paras","type1":"Bug","type2":"Grass","tier":"Common","evolvesTo":47,"bst":285},{"dexNumber":47,"name":"Parasect","type1":"Bug","type2":"Grass","tier":"Uncommon","evolvesTo":null,"bst":495},{"dexNumber":48,"name":"Venonat","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":49,"bst":305},{"dexNumber":49,"name":"Venomoth","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":450},{"dexNumber":50,"name":"Diglett","type1":"Ground","type2":null,"tier":"Common","evolvesTo":51,"bst":265},{"dexNumber":51,"name":"Dugtrio","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":425},{"dexNumber":52,"name":"Meowth","type1":"Normal","type2":null,"tier":"Common","evolvesTo":53,"bst":290},{"dexNumber":53,"name":"Persian","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":440},{"dexNumber":54,"name":"Psyduck","type1":"Water","type2":null,"tier":"Common","evolvesTo":55,"bst":320},{"dexNumber":55,"name":"Golduck","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":56,"name":"Mankey","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":57,"bst":305},{"dexNumber":57,"name":"Primeape","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":455},{"dexNumber":58,"name":"Growlithe","type1":"Fire","type2":null,"tier":"Common","evolvesTo":59,"bst":350},{"dexNumber":59,"name":"Arcanine","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null,"bst":555},{"dexNumber":60,"name":"Poliwag","type1":"Water","type2":null,"tier":"Common","evolvesTo":61,"bst":300},{"dexNumber":61,"name":"Poliwhirl","type1":"Water","type2":null,"tier":"Common","evolvesTo":62,"bst":385},{"dexNumber":62,"name":"Poliwrath","type1":"Water","type2":"Fighting","tier":"Uncommon","evolvesTo":null,"bst":510},{"dexNumber":63,"name":"Abra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":64,"bst":310},{"dexNumber":64,"name":"Kadabra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":65,"bst":400},{"dexNumber":65,"name":"Alakazam","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":66,"name":"Machop","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":67,"bst":305},{"dexNumber":67,"name":"Machoke","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":68,"bst":405},{"dexNumber":68,"name":"Machamp","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null,"bst":505},{"dexNumber":69,"name":"Bellsprout","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":70,"bst":260},{"dexNumber":70,"name":"Weepinbell","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":71,"bst":390},{"dexNumber":71,"name":"Victreebel","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":490},{"dexNumber":72,"name":"Tentacool","type1":"Water","type2":"Poison","tier":"Common","evolvesTo":73,"bst":335},{"dexNumber":73,"name":"Tentacruel","type1":"Water","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":515},{"dexNumber":74,"name":"Geodude","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":75,"bst":300},{"dexNumber":75,"name":"Graveler","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":76,"bst":390},{"dexNumber":76,"name":"Golem","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null,"bst":495},{"dexNumber":77,"name":"Ponyta","type1":"Fire","type2":null,"tier":"Common","evolvesTo":78,"bst":410},{"dexNumber":78,"name":"Rapidash","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":79,"name":"Slowpoke","type1":"Water","type2":"Psychic","tier":"Common","evolvesTo":80,"bst":315},{"dexNumber":80,"name":"Slowbro","type1":"Water","type2":"Psychic","tier":"Uncommon","evolvesTo":null,"bst":490},{"dexNumber":81,"name":"Magnemite","type1":"Electric","type2":null,"tier":"Common","evolvesTo":82,"bst":325},{"dexNumber":82,"name":"Magneton","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":465},{"dexNumber":83,"name":"Farfetch'd","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":352},{"dexNumber":84,"name":"Doduo","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":85,"bst":310},{"dexNumber":85,"name":"Dodrio","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":86,"name":"Seel","type1":"Water","type2":null,"tier":"Common","evolvesTo":87,"bst":325},{"dexNumber":87,"name":"Dewgong","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null,"bst":475},{"dexNumber":88,"name":"Grimer","type1":"Poison","type2":null,"tier":"Common","evolvesTo":89,"bst":325},{"dexNumber":89,"name":"Muk","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":90,"name":"Shellder","type1":"Water","type2":null,"tier":"Common","evolvesTo":91,"bst":305},{"dexNumber":91,"name":"Cloyster","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null,"bst":525},{"dexNumber":92,"name":"Gastly","type1":"Ghost","type2":"Poison","tier":"Common","evolvesTo":93,"bst":310},{"dexNumber":93,"name":"Haunter","type1":"Ghost","type2":"Poison","tier":"Uncommon","evolvesTo":94,"bst":425},{"dexNumber":94,"name":"Gengar","type1":"Ghost","type2":"Poison","tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":95,"name":"Onix","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null,"bst":385},{"dexNumber":96,"name":"Drowzee","type1":"Psychic","type2":null,"tier":"Common","evolvesTo":97,"bst":328},{"dexNumber":97,"name":"Hypno","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":448},{"dexNumber":98,"name":"Krabby","type1":"Water","type2":null,"tier":"Common","evolvesTo":99,"bst":340},{"dexNumber":99,"name":"Kingler","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":475},{"dexNumber":100,"name":"Voltorb","type1":"Electric","type2":null,"tier":"Common","evolvesTo":101,"bst":320},{"dexNumber":101,"name":"Electrode","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":490},{"dexNumber":102,"name":"Exeggcute","type1":"Grass","type2":"Psychic","tier":"Common","evolvesTo":103,"bst":395},{"dexNumber":103,"name":"Exeggutor","type1":"Grass","type2":"Psychic","tier":"Rare","evolvesTo":null,"bst":520},{"dexNumber":104,"name":"Cubone","type1":"Ground","type2":null,"tier":"Common","evolvesTo":105,"bst":320},{"dexNumber":105,"name":"Marowak","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":485},{"dexNumber":106,"name":"Hitmonlee","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null,"bst":455},{"dexNumber":107,"name":"Hitmonchan","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null,"bst":455},{"dexNumber":108,"name":"Lickitung","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":355},{"dexNumber":109,"name":"Koffing","type1":"Poison","type2":null,"tier":"Common","evolvesTo":110,"bst":355},{"dexNumber":110,"name":"Weezing","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":111,"name":"Rhyhorn","type1":"Ground","type2":"Rock","tier":"Common","evolvesTo":112,"bst":345},{"dexNumber":112,"name":"Rhydon","type1":"Ground","type2":"Rock","tier":"Uncommon","evolvesTo":null,"bst":485},{"dexNumber":113,"name":"Chansey","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":450},{"dexNumber":114,"name":"Tangela","type1":"Grass","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":345},{"dexNumber":115,"name":"Kangaskhan","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":490},{"dexNumber":116,"name":"Horsea","type1":"Water","type2":null,"tier":"Common","evolvesTo":117,"bst":295},{"dexNumber":117,"name":"Seadra","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":440},{"dexNumber":118,"name":"Goldeen","type1":"Water","type2":null,"tier":"Common","evolvesTo":119,"bst":320},{"dexNumber":119,"name":"Seaking","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":460},{"dexNumber":120,"name":"Staryu","type1":"Water","type2":null,"tier":"Common","evolvesTo":121,"bst":340},{"dexNumber":121,"name":"Starmie","type1":"Water","type2":"Psychic","tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":122,"name":"Mr. Mime","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":395},{"dexNumber":123,"name":"Scyther","type1":"Bug","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":124,"name":"Jynx","type1":"Ice","type2":"Psychic","tier":"Uncommon","evolvesTo":null,"bst":455},{"dexNumber":125,"name":"Electabuzz","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null,"bst":473},{"dexNumber":126,"name":"Magmar","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null,"bst":473},{"dexNumber":127,"name":"Pinsir","type1":"Bug","type2":null,"tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":128,"name":"Tauros","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":490},{"dexNumber":129,"name":"Magikarp","type1":"Water","type2":null,"tier":"Common","evolvesTo":130,"bst":200},{"dexNumber":130,"name":"Gyarados","type1":"Water","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":540},{"dexNumber":131,"name":"Lapras","type1":"Water","type2":"Ice","tier":"Rare","evolvesTo":null,"bst":535},{"dexNumber":132,"name":"Ditto","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":288},{"dexNumber":133,"name":"Eevee","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":136,"bst":325},{"dexNumber":134,"name":"Vaporeon","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null,"bst":525},{"dexNumber":135,"name":"Jolteon","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null,"bst":525},{"dexNumber":136,"name":"Flareon","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null,"bst":525},{"dexNumber":137,"name":"Porygon","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":395},{"dexNumber":138,"name":"Omanyte","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":139,"bst":355},{"dexNumber":139,"name":"Omastar","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null,"bst":495},{"dexNumber":140,"name":"Kabuto","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":141,"bst":355},{"dexNumber":141,"name":"Kabutops","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":142,"name":"Aerodactyl","type1":"Rock","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":515},{"dexNumber":143,"name":"Snorlax","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":590},{"dexNumber":144,"name":"Articuno","type1":"Ice","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":580},{"dexNumber":145,"name":"Zapdos","type1":"Electric","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":580},{"dexNumber":146,"name":"Moltres","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":580},{"dexNumber":147,"name":"Dratini","type1":"Dragon","type2":null,"tier":"Uncommon","evolvesTo":148,"bst":300},{"dexNumber":148,"name":"Dragonair","type1":"Dragon","type2":null,"tier":"Rare","evolvesTo":149,"bst":420},{"dexNumber":149,"name":"Dragonite","type1":"Dragon","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":600},{"dexNumber":150,"name":"Mewtwo","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null,"bst":680},{"dexNumber":151,"name":"Mew","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null,"bst":600}];
 
 const INLINE_TYPECHART = {
   "Normal":    {"Rock":0.5,"Ghost":0},
@@ -857,9 +705,23 @@ const INLINE_TYPECHART = {
   "Dragon":    {"Dragon":2}
 };
 
-const INLINE_STAGES = [{"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge","difficulty":0,"jitter":{"enabled":false,"min":0,"max":0}},{"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge","difficulty":4,"jitter":{"enabled":false,"min":0,"max":0}},{"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge","difficulty":8,"jitter":{"enabled":false,"min":0,"max":0}},{"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge","difficulty":12,"jitter":{"enabled":false,"min":0,"max":0}},{"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge","difficulty":16,"jitter":{"enabled":true,"min":-2,"max":2}},{"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge","difficulty":20,"jitter":{"enabled":true,"min":-2,"max":2}},{"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge","difficulty":24,"jitter":{"enabled":true,"min":-2,"max":2}},{"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge","difficulty":28,"jitter":{"enabled":true,"min":-2,"max":2}},{"id":"e4_1","stageName":"Lorelei \u2014 Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null,"difficulty":34,"jitter":{"enabled":true,"min":-3,"max":3}},{"id":"e4_2","stageName":"Bruno \u2014 Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null,"difficulty":38,"jitter":{"enabled":true,"min":-3,"max":3}},{"id":"e4_3","stageName":"Agatha \u2014 Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null,"difficulty":42,"jitter":{"enabled":true,"min":-3,"max":3}},{"id":"e4_4","stageName":"Lance \u2014 Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null,"difficulty":46,"jitter":{"enabled":true,"min":-3,"max":3}},{"id":"champion","stageName":"Blue \u2014 Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null,"difficulty":50,"jitter":{"enabled":true,"min":-3,"max":3}}];
+const INLINE_STAGES = [
+  {"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge"},
+  {"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge"},
+  {"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge"},
+  {"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge"},
+  {"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge"},
+  {"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge"},
+  {"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge"},
+  {"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge"},
+  {"id":"e4_1","stageName":"Lorelei — Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null},
+  {"id":"e4_2","stageName":"Bruno — Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null},
+  {"id":"e4_3","stageName":"Agatha — Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null},
+  {"id":"e4_4","stageName":"Lance — Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null},
+  {"id":"champion","stageName":"Blue — Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null}
+];
 
-const INLINE_BALANCE = {"intermissionWheel":{"Capture":30,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":12,"TypeShield":10,"LuckyCharm":6,"BonusSlotNextBattle":7,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":45,"TypeShield":30,"LuckyCharm":20,"RunningShoes":5},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"contributionBase":{"veryStrong":36,"strong":30,"neutral":24,"resisted":18},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.13},"statFactor":{"enabled":false,"min":0.85,"max":1.15,"bstMin":200,"bstMax":680},"clampMin":5,"clampMax":95}};
+const INLINE_BALANCE = {"intermissionWheel":{"Capture":30,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":12,"TypeShield":10,"LuckyCharm":6,"BonusSlotNextBattle":7,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":45,"TypeShield":30,"LuckyCharm":20,"RunningShoes":5},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"bstFormula":{"k":0.11737,"b":2.7},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.13},"clampMin":5,"clampMax":95}};
 
 // ── Global State ──────────────────────────────────────────────
 let G = {};
@@ -1116,6 +978,12 @@ function getStageContributionMultiplier(stageIndex) {
 }
 
 function getPokemonMatchup(pokemon, stageTypes, stageIndex) {
+  // BST-based contribution: bst * 0.11737 + 2.7, then scaled by stage multiplier
+  const bst = pokemon.bst || 300; // fallback if missing
+  const baseContrib = bst * 0.11737 + 2.7;
+  const mult = (stageIndex !== undefined) ? getStageContributionMultiplier(stageIndex) : 1.0;
+  const value = Math.max(1, Math.round(baseContrib * mult));
+  // Category kept for display only (no longer affects value)
   const pokemonTypes = [pokemon.type1, pokemon.type2].filter(Boolean);
   const filtered = stageTypes.filter(t => t !== 'Mixed');
   let best = 0, superCount = 0;
@@ -1126,25 +994,13 @@ function getPokemonMatchup(pokemon, stageTypes, stageIndex) {
       if (eff >= 2) superCount++;
     }
   }
+  let category;
+  if (superCount >= 2) category = 'VeryStrong';
+  else if (best >= 2)  category = 'Strong';
+  else if (best >= 1)  category = 'Neutral';
+  else                 category = 'Resisted';
 
-  const bases = DATA.balance.winModel.contributionBase;
-  let category, baseContrib;
-  if (superCount >= 2) { category = 'VeryStrong'; baseContrib = bases.veryStrong; }
-  else if (best >= 2)  { category = 'Strong';     baseContrib = bases.strong; }
-  else if (best >= 1)  { category = 'Neutral';    baseContrib = bases.neutral; }
-  else                 { category = 'Resisted';   baseContrib = bases.resisted; }
-
-  const mult = (stageIndex !== undefined) ? getStageContributionMultiplier(stageIndex) : 1.0;
-
-  const sf = DATA.balance.winModel.statFactor;
-  let statFactor = 1.0;
-  if (sf && sf.enabled && pokemon.bst) {
-    const norm = Math.max(0, Math.min(1, (pokemon.bst - sf.bstMin) / (sf.bstMax - sf.bstMin)));
-    statFactor = sf.min + (sf.max - sf.min) * norm;
-  }
-
-  const value = Math.max(1, Math.round(baseContrib * statFactor * mult));
-  return { category, baseContrib, mult: +mult.toFixed(3), statFactor: +statFactor.toFixed(3), value };
+  return { category, baseContrib: Math.round(baseContrib), bst, mult: +mult.toFixed(3), value };
 }
 
 function computeWinChance(party, stageTypes, bonuses = [], stage = null) {
@@ -1425,25 +1281,42 @@ function doCapture(forceRare, mystery, cb) {
   enqueueSpins(steps, () => {});
 }
 
+function getCaptureSuccessRate(pokemon) {
+  // Linear: BST<=400 → 100%, BST=744 → 50%, clamped [50,100]
+  const bst = pokemon.bst || 300;
+  return Math.max(50, Math.min(100, Math.round(-0.14535 * bst + 158.14)));
+}
+
 function makeCaptureResultStep(pokemon, cb) {
-  const rw = DATA.balance.captureResultWeights;
+  const successRate = getCaptureSuccessRate(pokemon);
+  const failRate    = 100 - successRate;
+  // Critical: 10% of the success slice (only if pokemon isn't legendary-tier)
+  // Split: Fail=failRate, Critical=floor(successRate*0.10), Success=remainder
+  const critWeight    = Math.floor(successRate * 0.10);
+  const successWeight = successRate - critWeight;
+  const slices = [
+    { label: 'Fail',     weight: failRate },
+    { label: 'Success',  weight: successWeight },
+    { label: 'Critical', weight: critWeight },
+  ].filter(s => s.weight > 0);
+
   return {
-    prompt: `\u1F3AF Spin the capture result for ${pokemon.name}!`,
-    slices: Object.entries(rw).map(([r, w]) => ({ label: r, weight: w })),
+    prompt: `\u{1F3AF} ${pokemon.name} (BST\u00a0${pokemon.bst || '?'}) \u2014 catch rate\u00a0${successRate}%`,
+    slices,
     onResult(idx, slice, next) {
       const result = slice.label;
       if (result === 'Fail') {
-        log('\u1F4A8', `Capture failed! ${pokemon.name} escaped.`, 'log-lose');
+        log('\u{1F4A8}', `Capture failed! ${pokemon.name} escaped. (catch rate ${successRate}%)`, 'log-lose');
         setWheelResult(`${pokemon.name} escaped!`);
         cb();
         next();
       } else if (result === 'Critical') {
-        log('\u1F4A5', `Critical! ${pokemon.name} + battle bonus +${DATA.balance.criticalBonus}%!`, 'log-crit');
+        log('\u{1F4A5}', `Critical capture! ${pokemon.name} + battle bonus +${DATA.balance.criticalBonus}%!`, 'log-crit');
         G.bonuses.criticalBonus = true;
         setWheelResult(`Critical! ${pokemon.name} caught!`);
         addToParty(pokemon, cb, next);
       } else {
-        log('\u2705', `Caught ${pokemon.name}!`, 'log-win');
+        log('\u2705', `Caught ${pokemon.name}! (catch rate ${successRate}%)`, 'log-win');
         setWheelResult(`${pokemon.name} caught!`);
         addToParty(pokemon, cb, next);
       }
@@ -1867,50 +1740,48 @@ function renderBattleBreakdown(breakdown, chance, rawChance, difficulty, jitter,
   fill.style.background = chance >= 70 ? 'var(--accent3)' : chance >= 40 ? '#f8d030' : 'var(--accent2)';
 
   const wm = DATA.balance.winModel;
-  const catLabel = { VeryStrong: 'Very Strong', Strong: 'Strong', Neutral: 'Neutral', Resisted: 'Resisted' };
+  const catLabel = { VeryStrong: '\u26a1\u26a1', Strong: '\u26a1', Neutral: '\u2014', Resisted: '\u25bd' };
 
   let html = `<div class="contrib-row"><span style="color:var(--text2)">Base chance</span><span class="contrib-vs">+${wm.baseChance}</span></div>`;
 
   for (const row of breakdown) {
     if (row.kind === 'pokemon') {
-      const cat   = catLabel[row.category] || row.category;
-      const multP = row.mult !== undefined ? ` \xD7${row.mult}` : '';
+      const multP = row.mult !== undefined ? ` \xd7${row.mult}` : '';
+      const bstStr = row.bst ? ` BST\u00a0${row.bst}` : '';
+      const cat = catLabel[row.category] || row.category;
       html += `<div class="contrib-row">
         <span><b style="color:var(--text)">${row.name}</b>
-          <small style="display:block;color:var(--text2);line-height:1.3">${cat} | base\u00a0${row.baseContrib}${multP}</small>
+          <small style="display:block;color:var(--text2);line-height:1.3">${bstStr} \u2192 base\u00a0${row.baseContrib}%${multP} ${cat}</small>
         </span>
-        <span class="contrib-vs">+${row.value}</span>
+        <span class="contrib-vs">+${row.value}%</span>
       </div>`;
     } else {
       html += `<div class="contrib-row">
         <span style="color:var(--accent)">\u2606\u00a0${row.name}</span>
-        <span class="contrib-bonus">+${row.value}</span>
+        <span class="contrib-bonus">+${row.value}%</span>
       </div>`;
     }
   }
 
   if (rawChance !== undefined) {
     html += `<div class="contrib-row" style="border-top:1px dashed var(--border);margin-top:3px;padding-top:3px">
-      <span style="color:var(--text2)">Raw chance</span><span style="color:var(--text2)">${rawChance}</span>
+      <span style="color:var(--text2)">Raw chance</span><span style="color:var(--text2)">${rawChance}%</span>
     </div>`;
   }
-
   if (difficulty !== undefined && difficulty > 0) {
     html += `<div class="contrib-row">
       <span style="color:var(--accent2)">\u2694\ufe0f Opponent strength</span>
-      <span style="color:var(--accent2)">\u2212${difficulty}</span>
+      <span style="color:var(--accent2)">\u2212${difficulty}%</span>
     </div>`;
   }
-
   if (jitter !== undefined && jitter !== 0) {
     const s = jitter > 0 ? '+' : '';
     const c = jitter > 0 ? 'var(--accent3)' : 'var(--accent2)';
     html += `<div class="contrib-row">
       <span style="color:${c}">\uD83C\uDFB2 Stage jitter</span>
-      <span style="color:${c}">${s}${jitter}</span>
+      <span style="color:${c}">${s}${jitter}%</span>
     </div>`;
   }
-
   html += `<div class="contrib-row" style="font-family:var(--pixel-font);font-size:0.4rem;border-top:2px solid var(--border);margin-top:4px;padding-top:4px;font-weight:bold">
     <span>Final win %</span><span>${chance}%</span>
   </div>`;
@@ -1977,26 +1848,24 @@ document.getElementById('overlay-restart').addEventListener('click', doRestart);
 // ── Calibration (dev-only — logs to console on boot) ──────────
 function runCalibration() {
   const starters = [DATA.dexMap[1], DATA.dexMap[4], DATA.dexMap[7]];
-  function avgContrib(stage, idx) {
-    const types = stage.stageTypes.filter(t => t !== 'Mixed');
-    const resolved = types.length ? types : ['Normal'];
-    return starters.reduce((s, p) => s + getPokemonMatchup(p, resolved, idx).value, 0) / starters.length;
+  function avgContrib(stageIdx) {
+    return starters.reduce((s, p) => {
+      const types = DATA.stages[stageIdx > 0 ? stageIdx : 0].stageTypes.filter(t => t !== 'Mixed');
+      return s + getPokemonMatchup(p, types.length ? types : ['Normal'], stageIdx).value;
+    }, 0) / starters.length;
   }
-  const gym1  = DATA.stages[0];
-  const e4    = DATA.stages[8];
-  const champ = DATA.stages[DATA.stages.length - 1];
-  const avgG1 = avgContrib(gym1,  0);
-  const avgE4 = avgContrib(e4,    8);
-  const avgCh = avgContrib(champ, DATA.stages.length - 1);
-  const wm    = DATA.balance.winModel;
-  console.group('%c[RNG Gym Run] Calibration', 'color:#f8e71c;font-weight:bold');
-  console.log('Avg starter contrib @ Gym 1       (target ~30):', avgG1.toFixed(1));
-  console.log('Avg starter contrib @ E4 Lorelei  (target ~10):', avgE4.toFixed(1));
-  console.log('Avg starter contrib @ Champion      (target ~4):', avgCh.toFixed(1));
-  console.log('multEarly:', wm.stageContributionMultiplier.multEarly, '| multLate:', wm.stageContributionMultiplier.multLate);
-  const ok = Math.abs(avgG1-28)<=6 && Math.abs(avgCh-4)<=3;
-  if (ok) console.log('%cCalibration OK ✓', 'color:#3ddc84');
-  else    console.warn('⚠ Calibration off. Adjust multLate (0.11..0.16) or contributionBase.');
+  const k = DATA.balance.winModel.bstFormula.k;
+  const b = DATA.balance.winModel.bstFormula.b;
+  console.group('%c[RNG Gym Run] BST Calibration', 'color:#f8e71c;font-weight:bold');
+  console.log('Formula: BST * ' + k + ' + ' + b + ' then x stageMultiplier');
+  console.log('Bulbasaur BST=318 @ Gym1: +' + Math.round(318*k+b) + '% base, +' + Math.round((318*k+b)*1.0) + '% final');
+  console.log('Mewtwo    BST=680 @ Gym1: +' + Math.round(680*k+b) + '% base');
+  console.log('Snorlax   BST=590 @ Gym1: +' + Math.round(590*k+b) + '% base');
+  console.log('Magikarp  BST=200 @ Gym1: +' + Math.round(200*k+b) + '% base');
+  const multChamp = DATA.balance.winModel.stageContributionMultiplier;
+  const tChamp = (DATA.stages.length-1)/(DATA.stages.length-1);
+  const multC = multChamp.multEarly + (multChamp.multLate - multChamp.multEarly) * tChamp;
+  console.log('Bulbasaur @ Champion (mult=' + multC.toFixed(3) + '): +' + Math.round((318*k+b)*multC) + '%');
   console.groupEnd();
 }
 
