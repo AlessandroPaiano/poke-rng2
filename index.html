@@ -705,23 +705,9 @@ const INLINE_TYPECHART = {
   "Dragon":    {"Dragon":2}
 };
 
-const INLINE_STAGES = [
-  {"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge"},
-  {"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge"},
-  {"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge"},
-  {"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge"},
-  {"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge"},
-  {"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge"},
-  {"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge"},
-  {"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge"},
-  {"id":"e4_1","stageName":"Lorelei — Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null},
-  {"id":"e4_2","stageName":"Bruno — Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null},
-  {"id":"e4_3","stageName":"Agatha — Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null},
-  {"id":"e4_4","stageName":"Lance — Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null},
-  {"id":"champion","stageName":"Blue — Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null}
-];
+const INLINE_STAGES = [{"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge","difficulty":20,"jitter":{"enabled":false,"min":0,"max":0},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge","difficulty":25,"jitter":{"enabled":false,"min":0,"max":0},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge","difficulty":75,"jitter":{"enabled":true,"min":-3,"max":3},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge","difficulty":75,"jitter":{"enabled":true,"min":-3,"max":3},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge","difficulty":115,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge","difficulty":110,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge","difficulty":140,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge","difficulty":140,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"e4_1","stageName":"Lorelei \u2014 Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null,"difficulty":160,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":3,"withShoes":4}},{"id":"e4_2","stageName":"Bruno \u2014 Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null,"difficulty":150,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"e4_3","stageName":"Agatha \u2014 Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null,"difficulty":140,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"e4_4","stageName":"Lance \u2014 Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null,"difficulty":120,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"champion","stageName":"Blue \u2014 Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null,"difficulty":105,"jitter":{"enabled":true,"min":-10,"max":10},"intermissionSpins":{"base":0,"withShoes":0}}];
 
-const INLINE_BALANCE = {"intermissionWheel":{"Capture":30,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":12,"TypeShield":10,"LuckyCharm":6,"BonusSlotNextBattle":7,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":45,"TypeShield":30,"LuckyCharm":20,"RunningShoes":5},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"bstFormula":{"k":0.11737,"b":2.7},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.13},"clampMin":5,"clampMax":95}};
+const INLINE_BALANCE = {"intermissionWheel":{"Capture":30,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":12,"TypeShield":10,"LuckyCharm":6,"BonusSlotNextBattle":7,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":45,"TypeShield":30,"LuckyCharm":20,"RunningShoes":5},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"bstFormula":{"k":0.11737,"b":2.7},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.3},"clampMin":5,"clampMax":95}};
 
 // ── Global State ──────────────────────────────────────────────
 let G = {};
@@ -1123,6 +1109,12 @@ function setupStarterWheel() {
 
 // ── Intermission ───────────────────────────────────────────────
 function getIntermissionSpins() {
+  const stage = DATA.stages[G.stageIndex];
+  if (stage && stage.intermissionSpins) {
+    return G.inventory.RunningShoes
+      ? stage.intermissionSpins.withShoes
+      : stage.intermissionSpins.base;
+  }
   return G.inventory.RunningShoes
     ? DATA.balance.intermissionSpins.withRunningShoes
     : DATA.balance.intermissionSpins.base;
@@ -1282,9 +1274,9 @@ function doCapture(forceRare, mystery, cb) {
 }
 
 function getCaptureSuccessRate(pokemon) {
-  // Linear: BST<=400 → 100%, BST=744 → 50%, clamped [50,100]
+  // BST <= 300 -> 100%, BST 744 -> 50%, clamped [50,100]
   const bst = pokemon.bst || 300;
-  return Math.max(50, Math.min(100, Math.round(-0.14535 * bst + 158.14)));
+  return Math.max(50, Math.min(100, Math.round(-0.11261 * bst + 133.78)));
 }
 
 function makeCaptureResultStep(pokemon, cb) {
@@ -1604,8 +1596,14 @@ function retryBattle(stage, stageTypes, usedPotion) {
 function advanceStage() {
   G.stageIndex++;
   if (G.stageIndex >= DATA.stages.length) { endRun(true); return; }
+  const nextStage = DATA.stages[G.stageIndex];
   G.phase = 'INTERMISSION';
   G.intermissionSpinsLeft = getIntermissionSpins();
+  if (nextStage.stageKind === 'E4' && G.intermissionSpinsLeft === 0) {
+    log('⚠', `No rest — straight into battle vs ${nextStage.stageName}!`, 'log-lose');
+  } else if (nextStage.id === 'e4_1') {
+    log('🎯', 'Last chance! 3 spins before the Elite Four gauntlet begins.', 'log-info');
+  }
   renderAll();
   setupIntermissionWheel();
 }
