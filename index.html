@@ -625,7 +625,24 @@ body {
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 #box-panel h2 { display: flex; align-items: center; justify-content: space-between; }
 
-  </style>
+  
+/* ---- ACTIVE ITEMS ---- */
+#active-items-panel { margin-top: 0; }
+#active-items-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.active-item-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--slot-empty); border: 2px solid var(--accent);
+  border-radius: 8px; padding: 7px 10px; cursor: pointer;
+  text-align: left; width: 100%; transition: background .15s, box-shadow .15s;
+  font-family: var(--body-font); color: var(--text);
+}
+.active-item-btn:hover:not(.disabled) { background: var(--panel-border); box-shadow: 0 0 8px var(--accent)66; }
+.active-item-btn.disabled { border-color: var(--border); opacity: 0.5; cursor: not-allowed; }
+.active-item-btn .ai-icon { font-size: 1.3rem; flex-shrink: 0; }
+.active-item-btn .ai-info { display: flex; flex-direction: column; }
+.active-item-btn .ai-info b { font-family: var(--pixel-font); font-size: 0.4rem; }
+.active-item-btn .ai-info small { font-size: 0.72rem; color: var(--text2); }
+</style>
 </head>
 
 
@@ -691,6 +708,11 @@ body {
         <div id="inventory-list"></div>
       </div>
 
+      <div class="panel" id="active-items-panel">
+        <h2>Active Items</h2>
+        <div id="active-items-list"></div>
+      </div>
+
       <div class="panel" id="stage-panel">
         <h2>Next Stage</h2>
         <div id="stage-info"></div>
@@ -712,14 +734,9 @@ body {
     </div>
   </div>
 
-  <div id="spin-popup" class="hidden">
-    <div id="spin-popup-inner">
-      <div id="spin-popup-label"></div>
-    </div>
-  </div>
+  <
 
 <script>
-
 const INLINE_POKEDEX = [{"dexNumber":1,"name":"Bulbasaur","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":2,"bst":318},{"dexNumber":2,"name":"Ivysaur","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":3,"bst":405},{"dexNumber":3,"name":"Venusaur","type1":"Grass","type2":"Poison","tier":"Rare","evolvesTo":null,"bst":525},{"dexNumber":4,"name":"Charmander","type1":"Fire","type2":null,"tier":"Common","evolvesTo":5,"bst":309},{"dexNumber":5,"name":"Charmeleon","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":6,"bst":405},{"dexNumber":6,"name":"Charizard","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":534},{"dexNumber":7,"name":"Squirtle","type1":"Water","type2":null,"tier":"Common","evolvesTo":8,"bst":314},{"dexNumber":8,"name":"Wartortle","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":9,"bst":405},{"dexNumber":9,"name":"Blastoise","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null,"bst":530},{"dexNumber":10,"name":"Caterpie","type1":"Bug","type2":null,"tier":"Common","evolvesTo":11,"bst":195},{"dexNumber":11,"name":"Metapod","type1":"Bug","type2":null,"tier":"Common","evolvesTo":12,"bst":205},{"dexNumber":12,"name":"Butterfree","type1":"Bug","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":395},{"dexNumber":13,"name":"Weedle","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":14,"bst":195},{"dexNumber":14,"name":"Kakuna","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":15,"bst":205},{"dexNumber":15,"name":"Beedrill","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":395},{"dexNumber":16,"name":"Pidgey","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":17,"bst":251},{"dexNumber":17,"name":"Pidgeotto","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":18,"bst":349},{"dexNumber":18,"name":"Pidgeot","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":479},{"dexNumber":19,"name":"Rattata","type1":"Normal","type2":null,"tier":"Common","evolvesTo":20,"bst":253},{"dexNumber":20,"name":"Raticate","type1":"Normal","type2":null,"tier":"Common","evolvesTo":null,"bst":413},{"dexNumber":21,"name":"Spearow","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":22,"bst":262},{"dexNumber":22,"name":"Fearow","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":442},{"dexNumber":23,"name":"Ekans","type1":"Poison","type2":null,"tier":"Common","evolvesTo":24,"bst":288},{"dexNumber":24,"name":"Arbok","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":438},{"dexNumber":25,"name":"Pikachu","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":26,"bst":320},{"dexNumber":26,"name":"Raichu","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null,"bst":485},{"dexNumber":27,"name":"Sandshrew","type1":"Ground","type2":null,"tier":"Common","evolvesTo":28,"bst":300},{"dexNumber":28,"name":"Sandslash","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":450},{"dexNumber":29,"name":"Nidoran-F","type1":"Poison","type2":null,"tier":"Common","evolvesTo":30,"bst":275},{"dexNumber":30,"name":"Nidorina","type1":"Poison","type2":null,"tier":"Common","evolvesTo":31,"bst":365},{"dexNumber":31,"name":"Nidoqueen","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null,"bst":505},{"dexNumber":32,"name":"Nidoran-M","type1":"Poison","type2":null,"tier":"Common","evolvesTo":33,"bst":273},{"dexNumber":33,"name":"Nidorino","type1":"Poison","type2":null,"tier":"Common","evolvesTo":34,"bst":365},{"dexNumber":34,"name":"Nidoking","type1":"Poison","type2":"Ground","tier":"Uncommon","evolvesTo":null,"bst":505},{"dexNumber":35,"name":"Clefairy","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":36,"bst":323},{"dexNumber":36,"name":"Clefable","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":483},{"dexNumber":37,"name":"Vulpix","type1":"Fire","type2":null,"tier":"Common","evolvesTo":38,"bst":299},{"dexNumber":38,"name":"Ninetales","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":505},{"dexNumber":39,"name":"Jigglypuff","type1":"Normal","type2":null,"tier":"Common","evolvesTo":40,"bst":270},{"dexNumber":40,"name":"Wigglytuff","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":435},{"dexNumber":41,"name":"Zubat","type1":"Poison","type2":"Flying","tier":"Common","evolvesTo":42,"bst":261},{"dexNumber":42,"name":"Golbat","type1":"Poison","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":455},{"dexNumber":43,"name":"Oddish","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":44,"bst":270},{"dexNumber":44,"name":"Gloom","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":45,"bst":395},{"dexNumber":45,"name":"Vileplume","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":490},{"dexNumber":46,"name":"Paras","type1":"Bug","type2":"Grass","tier":"Common","evolvesTo":47,"bst":285},{"dexNumber":47,"name":"Parasect","type1":"Bug","type2":"Grass","tier":"Uncommon","evolvesTo":null,"bst":495},{"dexNumber":48,"name":"Venonat","type1":"Bug","type2":"Poison","tier":"Common","evolvesTo":49,"bst":305},{"dexNumber":49,"name":"Venomoth","type1":"Bug","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":450},{"dexNumber":50,"name":"Diglett","type1":"Ground","type2":null,"tier":"Common","evolvesTo":51,"bst":265},{"dexNumber":51,"name":"Dugtrio","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":425},{"dexNumber":52,"name":"Meowth","type1":"Normal","type2":null,"tier":"Common","evolvesTo":53,"bst":290},{"dexNumber":53,"name":"Persian","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":440},{"dexNumber":54,"name":"Psyduck","type1":"Water","type2":null,"tier":"Common","evolvesTo":55,"bst":320},{"dexNumber":55,"name":"Golduck","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":56,"name":"Mankey","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":57,"bst":305},{"dexNumber":57,"name":"Primeape","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":455},{"dexNumber":58,"name":"Growlithe","type1":"Fire","type2":null,"tier":"Common","evolvesTo":59,"bst":350},{"dexNumber":59,"name":"Arcanine","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null,"bst":555},{"dexNumber":60,"name":"Poliwag","type1":"Water","type2":null,"tier":"Common","evolvesTo":61,"bst":300},{"dexNumber":61,"name":"Poliwhirl","type1":"Water","type2":null,"tier":"Common","evolvesTo":62,"bst":385},{"dexNumber":62,"name":"Poliwrath","type1":"Water","type2":"Fighting","tier":"Uncommon","evolvesTo":null,"bst":510},{"dexNumber":63,"name":"Abra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":64,"bst":310},{"dexNumber":64,"name":"Kadabra","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":65,"bst":400},{"dexNumber":65,"name":"Alakazam","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":66,"name":"Machop","type1":"Fighting","type2":null,"tier":"Common","evolvesTo":67,"bst":305},{"dexNumber":67,"name":"Machoke","type1":"Fighting","type2":null,"tier":"Uncommon","evolvesTo":68,"bst":405},{"dexNumber":68,"name":"Machamp","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null,"bst":505},{"dexNumber":69,"name":"Bellsprout","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":70,"bst":260},{"dexNumber":70,"name":"Weepinbell","type1":"Grass","type2":"Poison","tier":"Common","evolvesTo":71,"bst":390},{"dexNumber":71,"name":"Victreebel","type1":"Grass","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":490},{"dexNumber":72,"name":"Tentacool","type1":"Water","type2":"Poison","tier":"Common","evolvesTo":73,"bst":335},{"dexNumber":73,"name":"Tentacruel","type1":"Water","type2":"Poison","tier":"Uncommon","evolvesTo":null,"bst":515},{"dexNumber":74,"name":"Geodude","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":75,"bst":300},{"dexNumber":75,"name":"Graveler","type1":"Rock","type2":"Ground","tier":"Common","evolvesTo":76,"bst":390},{"dexNumber":76,"name":"Golem","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null,"bst":495},{"dexNumber":77,"name":"Ponyta","type1":"Fire","type2":null,"tier":"Common","evolvesTo":78,"bst":410},{"dexNumber":78,"name":"Rapidash","type1":"Fire","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":79,"name":"Slowpoke","type1":"Water","type2":"Psychic","tier":"Common","evolvesTo":80,"bst":315},{"dexNumber":80,"name":"Slowbro","type1":"Water","type2":"Psychic","tier":"Uncommon","evolvesTo":null,"bst":490},{"dexNumber":81,"name":"Magnemite","type1":"Electric","type2":null,"tier":"Common","evolvesTo":82,"bst":325},{"dexNumber":82,"name":"Magneton","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":465},{"dexNumber":83,"name":"Farfetch'd","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":352},{"dexNumber":84,"name":"Doduo","type1":"Normal","type2":"Flying","tier":"Common","evolvesTo":85,"bst":310},{"dexNumber":85,"name":"Dodrio","type1":"Normal","type2":"Flying","tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":86,"name":"Seel","type1":"Water","type2":null,"tier":"Common","evolvesTo":87,"bst":325},{"dexNumber":87,"name":"Dewgong","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null,"bst":475},{"dexNumber":88,"name":"Grimer","type1":"Poison","type2":null,"tier":"Common","evolvesTo":89,"bst":325},{"dexNumber":89,"name":"Muk","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":90,"name":"Shellder","type1":"Water","type2":null,"tier":"Common","evolvesTo":91,"bst":305},{"dexNumber":91,"name":"Cloyster","type1":"Water","type2":"Ice","tier":"Uncommon","evolvesTo":null,"bst":525},{"dexNumber":92,"name":"Gastly","type1":"Ghost","type2":"Poison","tier":"Common","evolvesTo":93,"bst":310},{"dexNumber":93,"name":"Haunter","type1":"Ghost","type2":"Poison","tier":"Uncommon","evolvesTo":94,"bst":425},{"dexNumber":94,"name":"Gengar","type1":"Ghost","type2":"Poison","tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":95,"name":"Onix","type1":"Rock","type2":"Ground","tier":"Uncommon","evolvesTo":null,"bst":385},{"dexNumber":96,"name":"Drowzee","type1":"Psychic","type2":null,"tier":"Common","evolvesTo":97,"bst":328},{"dexNumber":97,"name":"Hypno","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":448},{"dexNumber":98,"name":"Krabby","type1":"Water","type2":null,"tier":"Common","evolvesTo":99,"bst":340},{"dexNumber":99,"name":"Kingler","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":475},{"dexNumber":100,"name":"Voltorb","type1":"Electric","type2":null,"tier":"Common","evolvesTo":101,"bst":320},{"dexNumber":101,"name":"Electrode","type1":"Electric","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":490},{"dexNumber":102,"name":"Exeggcute","type1":"Grass","type2":"Psychic","tier":"Common","evolvesTo":103,"bst":395},{"dexNumber":103,"name":"Exeggutor","type1":"Grass","type2":"Psychic","tier":"Rare","evolvesTo":null,"bst":520},{"dexNumber":104,"name":"Cubone","type1":"Ground","type2":null,"tier":"Common","evolvesTo":105,"bst":320},{"dexNumber":105,"name":"Marowak","type1":"Ground","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":485},{"dexNumber":106,"name":"Hitmonlee","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null,"bst":455},{"dexNumber":107,"name":"Hitmonchan","type1":"Fighting","type2":null,"tier":"Rare","evolvesTo":null,"bst":455},{"dexNumber":108,"name":"Lickitung","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":355},{"dexNumber":109,"name":"Koffing","type1":"Poison","type2":null,"tier":"Common","evolvesTo":110,"bst":355},{"dexNumber":110,"name":"Weezing","type1":"Poison","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":500},{"dexNumber":111,"name":"Rhyhorn","type1":"Ground","type2":"Rock","tier":"Common","evolvesTo":112,"bst":345},{"dexNumber":112,"name":"Rhydon","type1":"Ground","type2":"Rock","tier":"Uncommon","evolvesTo":null,"bst":485},{"dexNumber":113,"name":"Chansey","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":450},{"dexNumber":114,"name":"Tangela","type1":"Grass","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":345},{"dexNumber":115,"name":"Kangaskhan","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":490},{"dexNumber":116,"name":"Horsea","type1":"Water","type2":null,"tier":"Common","evolvesTo":117,"bst":295},{"dexNumber":117,"name":"Seadra","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":440},{"dexNumber":118,"name":"Goldeen","type1":"Water","type2":null,"tier":"Common","evolvesTo":119,"bst":320},{"dexNumber":119,"name":"Seaking","type1":"Water","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":460},{"dexNumber":120,"name":"Staryu","type1":"Water","type2":null,"tier":"Common","evolvesTo":121,"bst":340},{"dexNumber":121,"name":"Starmie","type1":"Water","type2":"Psychic","tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":122,"name":"Mr. Mime","type1":"Psychic","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":395},{"dexNumber":123,"name":"Scyther","type1":"Bug","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":124,"name":"Jynx","type1":"Ice","type2":"Psychic","tier":"Uncommon","evolvesTo":null,"bst":455},{"dexNumber":125,"name":"Electabuzz","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null,"bst":473},{"dexNumber":126,"name":"Magmar","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null,"bst":473},{"dexNumber":127,"name":"Pinsir","type1":"Bug","type2":null,"tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":128,"name":"Tauros","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":490},{"dexNumber":129,"name":"Magikarp","type1":"Water","type2":null,"tier":"Common","evolvesTo":130,"bst":200},{"dexNumber":130,"name":"Gyarados","type1":"Water","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":540},{"dexNumber":131,"name":"Lapras","type1":"Water","type2":"Ice","tier":"Rare","evolvesTo":null,"bst":535},{"dexNumber":132,"name":"Ditto","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":null,"bst":288},{"dexNumber":133,"name":"Eevee","type1":"Normal","type2":null,"tier":"Uncommon","evolvesTo":136,"bst":325},{"dexNumber":134,"name":"Vaporeon","type1":"Water","type2":null,"tier":"Rare","evolvesTo":null,"bst":525},{"dexNumber":135,"name":"Jolteon","type1":"Electric","type2":null,"tier":"Rare","evolvesTo":null,"bst":525},{"dexNumber":136,"name":"Flareon","type1":"Fire","type2":null,"tier":"Rare","evolvesTo":null,"bst":525},{"dexNumber":137,"name":"Porygon","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":395},{"dexNumber":138,"name":"Omanyte","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":139,"bst":355},{"dexNumber":139,"name":"Omastar","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null,"bst":495},{"dexNumber":140,"name":"Kabuto","type1":"Rock","type2":"Water","tier":"Uncommon","evolvesTo":141,"bst":355},{"dexNumber":141,"name":"Kabutops","type1":"Rock","type2":"Water","tier":"Rare","evolvesTo":null,"bst":500},{"dexNumber":142,"name":"Aerodactyl","type1":"Rock","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":515},{"dexNumber":143,"name":"Snorlax","type1":"Normal","type2":null,"tier":"Rare","evolvesTo":null,"bst":590},{"dexNumber":144,"name":"Articuno","type1":"Ice","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":580},{"dexNumber":145,"name":"Zapdos","type1":"Electric","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":580},{"dexNumber":146,"name":"Moltres","type1":"Fire","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":580},{"dexNumber":147,"name":"Dratini","type1":"Dragon","type2":null,"tier":"Uncommon","evolvesTo":148,"bst":300},{"dexNumber":148,"name":"Dragonair","type1":"Dragon","type2":null,"tier":"Rare","evolvesTo":149,"bst":420},{"dexNumber":149,"name":"Dragonite","type1":"Dragon","type2":"Flying","tier":"Rare","evolvesTo":null,"bst":600},{"dexNumber":150,"name":"Mewtwo","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null,"bst":680},{"dexNumber":151,"name":"Mew","type1":"Psychic","type2":null,"tier":"Rare","evolvesTo":null,"bst":600}];
 
 const INLINE_TYPECHART = {
@@ -742,7 +759,7 @@ const INLINE_TYPECHART = {
 
 const INLINE_STAGES = [{"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge","difficulty":20,"jitter":{"enabled":false,"min":0,"max":0},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge","difficulty":25,"jitter":{"enabled":false,"min":0,"max":0},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge","difficulty":75,"jitter":{"enabled":true,"min":-3,"max":3},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge","difficulty":75,"jitter":{"enabled":true,"min":-3,"max":3},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge","difficulty":115,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge","difficulty":110,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge","difficulty":140,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge","difficulty":140,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"e4_1","stageName":"Lorelei \u2014 Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null,"difficulty":160,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":3,"withShoes":4}},{"id":"e4_2","stageName":"Bruno \u2014 Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null,"difficulty":150,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"e4_3","stageName":"Agatha \u2014 Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null,"difficulty":140,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"e4_4","stageName":"Lance \u2014 Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null,"difficulty":120,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"champion","stageName":"Blue \u2014 Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null,"difficulty":105,"jitter":{"enabled":true,"min":-10,"max":10},"intermissionSpins":{"base":0,"withShoes":0}}];
 
-const INLINE_BALANCE = {"intermissionWheel":{"Capture":30,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":12,"TypeShield":10,"LuckyCharm":6,"BonusSlotNextBattle":7,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":45,"TypeShield":30,"LuckyCharm":20,"RunningShoes":5},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"bstFormula":{"k":0.11737,"b":2.7},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.3},"clampMin":5,"clampMax":95}};
+const INLINE_BALANCE = {"intermissionWheel":{"Capture":34,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":15,"LuckyCharm":6,"BonusSlotNextBattle":10,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":40,"LuckyCharm":12,"EscapeRope":13,"RareCandy":15,"MasterBall":8,"XAttack":12},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"bstFormula":{"k":0.11737,"b":2.7},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.3},"clampMin":5,"clampMax":95}};
 
 // ── Global State ──────────────────────────────────────────────
 let G = {};
@@ -1039,6 +1056,18 @@ function computeWinChance(party, stageTypes, bonuses = [], stage = null) {
                      mult: m.mult, statFactor: m.statFactor, value: m.value, kind: 'pokemon' });
   }
 
+  // X Attack: double one pokemon contribution
+  if (G.bonuses && G.bonuses.xAttackTarget) {
+    const xt = G.bonuses.xAttackTarget;
+    for (const row of breakdown) {
+      if (row.kind === 'pokemon' && row.name === xt.name) {
+        rawChance += row.value;
+        pokemonContribSum += row.value;
+        row.xAttack = true;
+        break;
+      }
+    }
+  }
   for (const b of bonuses) {
     rawChance += b.value;
     breakdown.push({ name: b.label, category: b.category, value: b.value, kind: 'bonus' });
@@ -1102,8 +1131,9 @@ function initGame() {
     phase: 'STARTER',
     stageIndex: 0,
     party: [],
-    inventory: { Potion: 0, LuckyCharm: 0, TypeShield: 0, RunningShoes: false },
-    bonuses: { criticalBonus: false, bonusSlot: null },
+    inventory: { Potion: 0, LuckyCharm: 0, EscapeRope: 0, RunningShoes: false, RareCandy: 0, MasterBall: 0, XAttack: 0 },
+    bonuses: { criticalBonus: false, bonusSlot: null, xAttackTarget: null, masterBallReady: false },
+    evolveChance: 25,
     intermissionSpinsLeft: 0,
     runEnded: false,
     stageJitter: {},
@@ -1194,7 +1224,7 @@ function formatActionLabel(key) {
   return {
     Capture: 'Capture!', DoubleCapture: 'x2 Capture!',
     GuaranteedRareEncounter: 'Rare!', MysteryPokemon: 'Mystery!',
-    EvolvePartyPokemon: 'Evolve!', TypeShield: 'Type Shield!',
+    EvolvePartyPokemon: 'Evolve!', // TypeShield removed from main wheel
     LuckyCharm: 'Lucky Charm!', BonusSlotNextBattle: 'Bonus Slot!',
     FindItem: 'Find Item!',
   }[key] || key;
@@ -1224,8 +1254,7 @@ function resolveIntermissionAction(action, cb) {
     case 'EvolvePartyPokemon':
       doEvolve(cb); break;
     case 'TypeShield':
-      G.inventory.TypeShield++;
-      log('\u1F6E1', 'Type Shield added to bag!', 'log-item');
+      // TypeShield only obtainable via FindItem sub-wheel
       cb(); break;
     case 'LuckyCharm':
       G.inventory.LuckyCharm++;
@@ -1317,6 +1346,19 @@ function getCaptureSuccessRate(pokemon) {
 }
 
 function makeCaptureResultStep(pokemon, cb) {
+  // Master Ball: skip wheel, auto-catch
+  if (G.bonuses && G.bonuses.masterBallReady) {
+    G.bonuses.masterBallReady = false;
+    return {
+      prompt: '🟣 Master Ball! ' + pokemon.name + ' is caught!',
+      slices: [{ label: 'Caught!', weight: 1 }],
+      onResult(idx, slice, next) {
+        log('🟣', 'Master Ball! ' + pokemon.name + ' caught!', 'log-win');
+        setWheelResult(pokemon.name + ' caught! (Master Ball)');
+        addToParty(pokemon, cb, next);
+      }
+    };
+  }
   const successRate = getCaptureSuccessRate(pokemon);
   const failRate    = 100 - successRate;
   // Critical: 10% of the success slice (only if pokemon isn't legendary-tier)
@@ -1453,66 +1495,67 @@ function formatPartyFullLabel(key) {
 }
 
 // ── Evolve ─────────────────────────────────────────────────────
+function evolveTarget(target, cb) {
+  const evolved = DATA.dexMap[target.evolvesTo];
+  if (!evolved) { cb(); return; }
+  const i = G.party.findIndex(p => p.dexNumber === target.dexNumber);
+  if (i >= 0) {
+    G.party[i] = { ...evolved };
+    log('✨', target.name + ' → ' + evolved.name + '!', 'log-evolve');
+    setWheelResult(target.name + ' → ' + evolved.name + '!');
+    renderAll();
+  }
+  cb();
+}
+
+function doEvolveOne(evolvable, cb) {
+  if (evolvable.length === 0) { cb(); return; }
+  if (evolvable.length === 1) {
+    // Only one evolvable — no wheel needed
+    log('✨', 'Only one evolvable — evolving directly!', 'log-evolve');
+    evolveTarget(evolvable[0], cb);
+    return;
+  }
+  // Spin a wheel with all evolvable pokemon
+  enqueueSpins([{
+    prompt: '✨ Evolution! Spin to see who evolves!',
+    slices: evolvable.map(p => ({ label: p.name, weight: 1, poke: p })),
+    onResult(idx, slice, next) {
+      evolveTarget(slice.poke, cb);
+      next();
+    }
+  }], () => {});
+}
+
 function doEvolve(cb) {
   const evolvable = G.party.filter(p => p.evolvesTo);
   if (evolvable.length === 0) {
-    log('\u274C', 'No evolvable Pokemon in party.', 'log-info');
+    log('❌', 'No evolvable Pokemon in party.', 'log-info');
     setWheelResult('No evolutions available!');
     cb(); return;
   }
-  const stage = DATA.stages[G.stageIndex];
-  const stageTypes = stage.stageTypes;
-  enqueueSpins([{
-    prompt: '\u2728 Evolve — Spin to pick which one!',
-    slices: [
-      { label: 'Random Evolvable', weight: 60, action: 'random' },
-      { label: 'Worst Matchup', weight: 40, action: 'worst' },
-    ],
-    onResult(idx, slice, next) {
-      let target;
-      if (slice.action === 'random') {
-        target = evolvable[Math.floor(Math.random() * evolvable.length)];
-      } else {
-        let worstVal = Infinity;
-        for (const p of evolvable) {
-          const { value } = getPokemonMatchup(p, stageTypes);
-          if (value < worstVal) { worstVal = value; target = p; }
-        }
-      }
-      const evolved = DATA.dexMap[target.evolvesTo];
-      if (evolved) {
-        const i = G.party.findIndex(p => p.dexNumber === target.dexNumber);
-        if (i >= 0) {
-          G.party[i] = { ...evolved };
-          log('\u2728', `${target.name} \u2192 ${evolved.name}!`, 'log-evolve');
-          setWheelResult(`${target.name} \u2192 ${evolved.name}!`);
-          renderAll();
-        }
-      }
-      cb(); next();
-    }
-  }], () => {});
+  log('✨', 'Intermission evolution!', 'log-evolve');
+  doEvolveOne(evolvable, cb);
 }
 
 // ── Find Item ──────────────────────────────────────────────────
 function doFindItem(cb) {
   const fw = DATA.balance.findItemWheel;
+  const labelMap = {
+    Potion: 'Potion', LuckyCharm: 'Lucky Charm', EscapeRope: 'Escape Rope',
+    RareCandy: 'Rare Candy', MasterBall: 'Master Ball', XAttack: 'X Attack'
+  };
   const slices = Object.entries(fw).map(([k, w]) => ({
-    label: k === 'RunningShoes' ? 'Running Shoes' : k, weight: w, item: k
+    label: labelMap[k] || k, weight: w, item: k
   }));
-  log('\u1F50D', 'Find Item! Spin to see what you get.', 'log-item');
+  log('🔍', 'Find Item! Spin to see what you get.', 'log-item');
   enqueueSpins([{
-    prompt: '\u1F50D Find Item — Spin!',
+    prompt: '🔍 Find Item — Spin!',
     slices,
     onResult(idx, slice, next) {
-      if (slice.item === 'RunningShoes') {
-        G.inventory.RunningShoes = true;
-        log('\u1F45F', 'Running Shoes! +1 intermission spin per stage!', 'log-item');
-      } else {
-        G.inventory[slice.item]++;
-        log('\u1F392', `Found ${slice.label}!`, 'log-item');
-      }
-      setWheelResult(`Found: ${slice.label}!`);
+      G.inventory[slice.item] = (G.inventory[slice.item] || 0) + 1;
+      log('🎒', 'Found ' + slice.label + '!', 'log-item');
+      setWheelResult('Found: ' + slice.label + '!');
       renderAll(); cb(); next();
     }
   }], () => {});
@@ -1520,34 +1563,15 @@ function doFindItem(cb) {
 
 // ── Bonus Slot ─────────────────────────────────────────────────
 function doBonusSlot(cb) {
-  if (G.party.length === 0) { cb(); return; }
-  const stage = DATA.stages[G.stageIndex];
-  const stageTypes = stage.stageTypes;
-  const slices = [
-    { label: 'Best Matchup', weight: 40, action: 'best' },
-    { label: 'Random Party', weight: 60, action: 'random' },
-  ];
-  log('\u2B50', 'Bonus Slot! Spin to pick the helper.', 'log-item');
-  enqueueSpins([{
-    prompt: '\u2B50 Bonus Slot — Spin to pick!',
-    slices,
-    onResult(idx, slice, next) {
-      let chosen;
-      if (slice.action === 'best') {
-        let bestVal = -1;
-        for (const p of G.party) {
-          const { value } = getPokemonMatchup(p, stageTypes);
-          if (value > bestVal) { bestVal = value; chosen = p; }
-        }
-      } else {
-        chosen = G.party[Math.floor(Math.random() * G.party.length)];
-      }
-      G.bonuses.bonusSlot = { ...chosen };
-      log('\u2B50', `Bonus slot: ${chosen.name} for next battle!`, 'log-item');
-      setWheelResult(`Bonus: ${chosen.name}!`);
-      renderAll(); cb(); next();
-    }
-  }], () => {});
+  // Pick a random Pokemon with BST >= 600 as a temporary battle helper
+  const elites = DATA.pokedex.filter(p => (p.bst || 0) >= 600);
+  if (elites.length === 0) { cb(); return; }
+  const chosen = elites[Math.floor(Math.random() * elites.length)];
+  G.bonuses.bonusSlot = { ...chosen };
+  log('\u2B50', `Bonus Slot! ${chosen.name} (BST\u00a0${chosen.bst}) joins for the next battle!`, 'log-item');
+  setWheelResult(`Bonus: ${chosen.name} (BST\u00a0${chosen.bst})!`);
+  renderAll();
+  cb();
 }
 
 // ── Battle Phase ───────────────────────────────────────────────
@@ -1604,6 +1628,7 @@ function setupBattlePhase() {
     log('\u2694', `Battle vs ${stage.stageName} (${chance}% win)`, 'log-info');
     spinWheel(slices, (idx, slice) => {
       G.bonuses.bonusSlot = null;
+      G.bonuses.xAttackTarget = null;
       if (slice.label === 'WIN!') {
         log('\u1F3C6', `VICTORY vs ${stage.stageName}!`, 'log-win');
         setWheelResult(`Victory!${stage.badge ? ' ' + stage.badge + ' earned!' : ''}`);
@@ -1622,14 +1647,32 @@ function setupBattlePhase() {
 function handleDefeat(stage, stageTypes) {
   if (G.inventory.LuckyCharm > 0) {
     G.inventory.LuckyCharm--;
-    log('\u1F340', 'Lucky Charm used! Rerolling battle...', 'log-item');
+    log('\u{1F340}', 'Lucky Charm used! Rerolling battle...', 'log-item');
     renderAll();
     retryBattle(stage, stageTypes, false);
   } else if (G.inventory.Potion > 0) {
     G.inventory.Potion--;
-    log('\u1F9EA', 'Potion used! Retrying battle...', 'log-item');
+    log('\u{1F9EA}', 'Potion used! Retrying battle...', 'log-item');
     renderAll();
     retryBattle(stage, stageTypes, true);
+  } else if (G.inventory.EscapeRope > 0) {
+    G.inventory.EscapeRope--;
+    // E4 or Champion: warp back to Lorelei (e4_1) intermission
+    // Gym: warp back to this stage's intermission (replay the spins)
+    const isEliteGauntlet = stage.stageKind === 'E4' || stage.stageKind === 'CHAMPION';
+    if (isEliteGauntlet) {
+      const e4Idx = DATA.stages.findIndex(s => s.id === 'e4_1');
+      G.stageIndex = e4Idx;
+      log('\u{1F9F6}', 'Escape Rope used! Warped back to the start of the Elite Four.', 'log-item');
+    } else {
+      // Stay at current stage — restart its intermission
+      log('\u{1F9F6}', `Escape Rope used! Rewinding to intermission before ${stage.stageName}.`, 'log-item');
+    }
+    G.phase = 'INTERMISSION';
+    G.stageJitter[stage.id] = undefined; // reroll jitter on retry
+    G.intermissionSpinsLeft = getIntermissionSpins();
+    renderAll();
+    setupIntermissionWheel();
   } else {
     endRun(false, stage.stageName);
   }
@@ -1662,26 +1705,59 @@ function retryBattle(stage, stageTypes, usedPotion) {
           renderAll();
           retryBattle(stage, stageTypes, true);
         } else {
-          endRun(false, stage.stageName);
+          handleDefeat(stage, stageTypes);
         }
       }
     });
   });
 }
 
+function tryPostGymEvolution(prevStage, onDone) {
+  if (!prevStage || prevStage.stageKind !== 'GYM') { onDone(); return; }
+  const evolvable = G.party.filter(p => p.evolvesTo);
+  if (evolvable.length === 0) { onDone(); return; }
+
+  const chance = G.evolveChance;
+  log('✨', 'Evolution check! Spin the wheel (' + chance + '% chance)...', 'log-evolve');
+
+  enqueueSpins([{
+    prompt: '✨ Evolution Check — ' + chance + '% chance!',
+    slices: [
+      { label: 'Evolves!', weight: chance },
+      { label: 'No Evo',   weight: 100 - chance },
+    ],
+    onResult(idx, slice, next) {
+      if (slice.label === 'Evolves!') {
+        G.evolveChance = 25;
+        log('✨', 'Evolution! (' + chance + '% — chance resets to 25%)', 'log-evolve');
+        doEvolveOne(evolvable, onDone);
+        next();
+      } else {
+        G.evolveChance = Math.min(100, chance + 25);
+        log('❌', 'No evolution. Next chance: ' + G.evolveChance + '%', 'log-info');
+        onDone();
+        next();
+      }
+    }
+  }], () => {});
+}
+
 function advanceStage() {
+  const prevStage = DATA.stages[G.stageIndex];
   G.stageIndex++;
   if (G.stageIndex >= DATA.stages.length) { endRun(true); return; }
   const nextStage = DATA.stages[G.stageIndex];
-  G.phase = 'INTERMISSION';
-  G.intermissionSpinsLeft = getIntermissionSpins();
-  if (nextStage.stageKind === 'E4' && G.intermissionSpinsLeft === 0) {
-    log('⚠', `No rest — straight into battle vs ${nextStage.stageName}!`, 'log-lose');
-  } else if (nextStage.id === 'e4_1') {
-    log('🎯', 'Last chance! 3 spins before the Elite Four gauntlet begins.', 'log-info');
-  }
-  renderAll();
-  setupIntermissionWheel();
+  tryPostGymEvolution(prevStage, () => {
+    G.phase = 'INTERMISSION';
+    G.intermissionSpinsLeft = getIntermissionSpins();
+    if (nextStage.stageKind === 'E4' && G.intermissionSpinsLeft === 0) {
+      log('⚠', 'No rest — straight into battle vs ' + nextStage.stageName + '!', 'log-lose');
+    } else if (nextStage.id === 'e4_1') {
+      log('🎯', 'Last chance! 3 spins before the Elite Four gauntlet begins.', 'log-info');
+    }
+    renderAll();
+    setupIntermissionWheel();
+  });
 }
 
 function endRun(win, stageName) {
@@ -1800,21 +1876,90 @@ function renderBox() {
 function renderInventory() {
   const list = document.getElementById('inventory-list');
   list.innerHTML = '';
-  [['Potion','\u1F9EA','Potion'],['TypeShield','\u1F6E1','Type Shield'],['LuckyCharm','\u1F340','Lucky Charm']].forEach(([key, icon, name]) => {
+  const consumables = [
+    ['Potion',     '🧪', 'Potion'],
+    ['LuckyCharm', '🍀', 'Lucky Charm'],
+    ['EscapeRope', '🧶', 'Escape Rope'],
+    ['RareCandy',  '🍬', 'Rare Candy'],
+    ['MasterBall', '🟣', 'Master Ball'],
+    ['XAttack',    '💪', 'X Attack'],
+  ];
+  consumables.forEach(([key, icon, name]) => {
+    const count = G.inventory[key] || 0;
+    if (!count) return;
     const row = document.createElement('div');
     row.className = 'inv-row';
-    row.innerHTML = `<span class="inv-name">${icon} ${name}</span><span class="inv-count">\u00D7${G.inventory[key]}</span>`;
+    row.innerHTML = `<span class="inv-name">${icon} ${name}</span><span class="inv-count">×${count}</span>`;
     list.appendChild(row);
   });
-  const shoes = document.createElement('div');
-  shoes.className = 'inv-row';
-  shoes.innerHTML = `<span class="inv-name">\u1F45F Running Shoes</span><span class="inv-permanent">${G.inventory.RunningShoes ? '\u2713 Active' : '\u2014'}</span>`;
-  list.appendChild(shoes);
-  if (G.bonuses && G.bonuses.criticalBonus) {
-    const cb = document.createElement('div');
-    cb.className = 'inv-row';
-    cb.innerHTML = `<span class="inv-name">\u1F4A5 Crit Bonus</span><span class="inv-permanent">+${DATA.balance.criticalBonus}%</span>`;
-    list.appendChild(cb);
+  if (G.inventory.RunningShoes) {
+    const r = document.createElement('div');
+    r.className = 'inv-row';
+    r.innerHTML = '<span class="inv-name">👟 Running Shoes</span><span class="inv-permanent">✓</span>';
+    list.appendChild(r);
+  }
+  if (G.bonuses.criticalBonus) {
+    const r = document.createElement('div');
+    r.className = 'inv-row';
+    r.innerHTML = `<span class="inv-name">💥 Crit Bonus</span><span class="inv-permanent">+${DATA.balance.criticalBonus}%</span>`;
+    list.appendChild(r);
+  }
+  renderActiveItems();
+}
+
+function renderActiveItems() {
+  const panel = document.getElementById('active-items-list');
+  if (!panel) return;
+  panel.innerHTML = '';
+  const isIntermission = G.phase === 'INTERMISSION';
+
+  function makeBtn(icon, label, desc, enabled, onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'active-item-btn' + (enabled ? '' : ' disabled');
+    btn.disabled  = !enabled;
+    btn.innerHTML = `<span class="ai-icon">${icon}</span><span class="ai-info"><b>${label}</b><small>${desc}</small></span>`;
+    if (enabled) btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  // Rare Candy
+  if ((G.inventory.RareCandy || 0) > 0) {
+    const evolvable = G.party.filter(p => p.evolvesTo);
+    const ok = isIntermission && evolvable.length > 0;
+    panel.appendChild(makeBtn('🍬', 'Rare Candy',
+      ok ? 'Evolve a party Pokemon' : (evolvable.length === 0 ? 'No evolvable Pokemon' : 'Only during intermission'),
+      ok, () => {
+        G.inventory.RareCandy--;
+        log('🍬', 'Rare Candy used!', 'log-item');
+        doEvolveOne(evolvable, () => { renderAll(); });
+      }));
+  }
+
+  // Master Ball
+  if ((G.inventory.MasterBall || 0) > 0) {
+    const active = G.bonuses.masterBallReady;
+    const desc = active ? 'Ready! Next capture is auto-caught' : 'Activate to auto-catch next Pokemon';
+    panel.appendChild(makeBtn('🟣', 'Master Ball', desc, !active, () => {
+      G.inventory.MasterBall--;
+      G.bonuses.masterBallReady = true;
+      log('🟣', 'Master Ball ready! Next capture is guaranteed.', 'log-item');
+      renderAll();
+    }));
+  }
+
+  // X Attack
+  if ((G.inventory.XAttack || 0) > 0) {
+    const ok = isIntermission && G.party.length > 0 && !G.bonuses.xAttackTarget;
+    const desc = G.bonuses.xAttackTarget
+      ? 'Active on ' + G.bonuses.xAttackTarget.name
+      : (ok ? 'Double a random Pokemon\'s contribution' : 'Only before battle');
+    panel.appendChild(makeBtn('💪', 'X Attack', desc, ok, () => {
+      G.inventory.XAttack--;
+      const target = G.party[Math.floor(Math.random() * G.party.length)];
+      G.bonuses.xAttackTarget = { ...target };
+      log('💪', 'X Attack on ' + target.name + '! Contribution doubled next battle.', 'log-item');
+      renderAll();
+    }));
   }
 }
 
@@ -1866,6 +2011,7 @@ function renderBattleBreakdown(breakdown, chance, rawChance, difficulty, jitter,
   for (const row of breakdown) {
     if (row.kind === 'pokemon') {
       const multP = row.mult !== undefined ? ` \xd7${row.mult}` : '';
+      const xaTag = row.xAttack ? ' <b style="color:#f4a">💪×2</b>' : '';
       const bstStr = row.bst ? ` BST\u00a0${row.bst}` : '';
       const cat = catLabel[row.category] || row.category;
       html += `<div class="contrib-row">
