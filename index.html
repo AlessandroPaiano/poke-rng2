@@ -759,7 +759,7 @@ const INLINE_TYPECHART = {
 
 const INLINE_STAGES = [{"id":"gym1","stageName":"Brock's Gym","stageKind":"GYM","stageTypes":["Rock"],"leader":"Brock","badge":"Boulder Badge","difficulty":20,"jitter":{"enabled":false,"min":0,"max":0},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym2","stageName":"Misty's Gym","stageKind":"GYM","stageTypes":["Water"],"leader":"Misty","badge":"Cascade Badge","difficulty":25,"jitter":{"enabled":false,"min":0,"max":0},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym3","stageName":"Lt. Surge's Gym","stageKind":"GYM","stageTypes":["Electric"],"leader":"Lt. Surge","badge":"Thunder Badge","difficulty":75,"jitter":{"enabled":true,"min":-3,"max":3},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym4","stageName":"Erika's Gym","stageKind":"GYM","stageTypes":["Grass"],"leader":"Erika","badge":"Rainbow Badge","difficulty":75,"jitter":{"enabled":true,"min":-3,"max":3},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym5","stageName":"Koga's Gym","stageKind":"GYM","stageTypes":["Poison"],"leader":"Koga","badge":"Soul Badge","difficulty":115,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym6","stageName":"Sabrina's Gym","stageKind":"GYM","stageTypes":["Psychic"],"leader":"Sabrina","badge":"Marsh Badge","difficulty":110,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym7","stageName":"Blaine's Gym","stageKind":"GYM","stageTypes":["Fire"],"leader":"Blaine","badge":"Volcano Badge","difficulty":140,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"gym8","stageName":"Giovanni's Gym","stageKind":"GYM","stageTypes":["Ground"],"leader":"Giovanni","badge":"Earth Badge","difficulty":140,"jitter":{"enabled":true,"min":-5,"max":5},"intermissionSpins":{"base":1,"withShoes":2}},{"id":"e4_1","stageName":"Lorelei \u2014 Elite Four","stageKind":"E4","stageTypes":["Ice","Water"],"leader":"Lorelei","badge":null,"difficulty":160,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":3,"withShoes":4}},{"id":"e4_2","stageName":"Bruno \u2014 Elite Four","stageKind":"E4","stageTypes":["Fighting","Rock"],"leader":"Bruno","badge":null,"difficulty":150,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"e4_3","stageName":"Agatha \u2014 Elite Four","stageKind":"E4","stageTypes":["Ghost","Poison"],"leader":"Agatha","badge":null,"difficulty":140,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"e4_4","stageName":"Lance \u2014 Elite Four","stageKind":"E4","stageTypes":["Dragon","Flying"],"leader":"Lance","badge":null,"difficulty":120,"jitter":{"enabled":true,"min":-8,"max":8},"intermissionSpins":{"base":0,"withShoes":0}},{"id":"champion","stageName":"Blue \u2014 Champion","stageKind":"CHAMPION","stageTypes":["Mixed"],"leader":"Blue","badge":null,"difficulty":105,"jitter":{"enabled":true,"min":-10,"max":10},"intermissionSpins":{"base":0,"withShoes":0}}];
 
-const INLINE_BALANCE = {"intermissionWheel":{"Capture":34,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":15,"LuckyCharm":6,"BonusSlotNextBattle":10,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":40,"LuckyCharm":12,"EscapeRope":13,"RareCandy":15,"MasterBall":8,"XAttack":12},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"bstFormula":{"k":0.11737,"b":2.7},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.3},"clampMin":5,"clampMax":95}};
+const INLINE_BALANCE = {"intermissionWheel":{"Capture":34,"DoubleCapture":10,"GuaranteedRareEncounter":6,"MysteryPokemon":9,"EvolvePartyPokemon":15,"LuckyCharm":6,"BonusSlotNextBattle":10,"FindItem":10},"captureTierWeights":{"Common":70,"Uncommon":25,"Rare":5},"mysteryTierWeights":{"Common":55,"Uncommon":35,"Rare":10},"captureResultWeights":{"Fail":30,"Success":60,"Critical":10},"criticalBonus":6,"partyFullWheel":{"ReplaceRandom":40,"ReplaceWorstMatchup":40,"DiscardNew":20},"findItemWheel":{"Potion":40,"LuckyCharm":12,"EscapeRope":13,"RareCandy":15,"MasterBall":8,"XAttack":12},"intermissionSpins":{"base":1,"withRunningShoes":2},"typeShieldBonus":8,"bonusSlotContribution":7,"winModel":{"baseChance":10,"effectiveTypeBonus":5,"bstFormula":{"k":0.11737,"b":2.7},"stageContributionMultiplier":{"multEarly":1.0,"multLate":0.3},"clampMin":5,"clampMax":95}};
 
 // ── Global State ──────────────────────────────────────────────
 let G = {};
@@ -1021,15 +1021,16 @@ function getPokemonMatchup(pokemon, stageTypes, stageIndex) {
   const baseContrib = bst * 0.11737 + 2.7;
   const mult = (stageIndex !== undefined) ? getStageContributionMultiplier(stageIndex) : 1.0;
   const value = Math.max(1, Math.round(baseContrib * mult));
-  // Category kept for display only (no longer affects value)
   const pokemonTypes = [pokemon.type1, pokemon.type2].filter(Boolean);
   const filtered = stageTypes.filter(t => t !== 'Mixed');
-  let best = 0, superCount = 0;
+  const effBonus = DATA.balance.winModel.effectiveTypeBonus ?? 0;
+  let best = 0, superCount = 0, effDelta = 0;
   for (const pt of pokemonTypes) {
     for (const st of filtered) {
       const eff = getEffectiveness(pt, st);
       if (eff > best) best = eff;
-      if (eff >= 2) superCount++;
+      if (eff >= 2) { superCount++; effDelta += effBonus; }
+      else if (eff < 1) { effDelta -= effBonus; }
     }
   }
   let category;
@@ -1038,7 +1039,7 @@ function getPokemonMatchup(pokemon, stageTypes, stageIndex) {
   else if (best >= 1)  category = 'Neutral';
   else                 category = 'Resisted';
 
-  return { category, baseContrib: Math.round(baseContrib), bst, mult: +mult.toFixed(3), value };
+  return { category, baseContrib: Math.round(baseContrib), bst, mult: +mult.toFixed(3), value, effDelta };
 }
 
 function computeWinChance(party, stageTypes, bonuses = [], stage = null) {
@@ -1050,10 +1051,10 @@ function computeWinChance(party, stageTypes, bonuses = [], stage = null) {
 
   for (const p of party) {
     const m = getPokemonMatchup(p, stageTypes, stageIndex);
-    rawChance += m.value;
-    pokemonContribSum += m.value;
+    rawChance += m.value + m.effDelta;
+    pokemonContribSum += m.value + m.effDelta;
     breakdown.push({ name: p.name, category: m.category, baseContrib: m.baseContrib,
-                     mult: m.mult, statFactor: m.statFactor, value: m.value, kind: 'pokemon' });
+                     mult: m.mult, statFactor: m.statFactor, value: m.value, effDelta: m.effDelta, kind: 'pokemon' });
   }
 
   // X Attack: double one pokemon contribution
@@ -1169,7 +1170,10 @@ function setupStarterWheel() {
       G.intermissionSpinsLeft = getIntermissionSpins();
       setWheelResult(`${chosen.name} is your starter!`);
       renderAll();
-      setupIntermissionWheel();
+      log('\u{1F381}', 'Run bonus: free starter capture!', 'log-capture');
+      doCapture(false, false, () => {
+        setupIntermissionWheel();
+      });
     });
   });
 }
@@ -1402,12 +1406,16 @@ function pushCaptureResultStep(steps, pokemon, cb) {
 }
 
 function canSwapBox() {
-  if (G.phase !== 'INTERMISSION') return false;
-  const stage = DATA.stages[G.stageIndex];
-  if (!stage) return false;
-  // E4_2, E4_3, E4_4, Champion have 0 spins — treat as gauntlet, no swap
-  if (stage.intermissionSpins && stage.intermissionSpins.base === 0 && stage.intermissionSpins.withShoes === 0) return false;
-  return true;
+  if (G.phase === 'INTERMISSION') {
+    const stage = DATA.stages[G.stageIndex];
+    if (!stage) return false;
+    // E4_2, E4_3, E4_4, Champion have 0 spins — treat as gauntlet, no swap
+    if (stage.intermissionSpins && stage.intermissionSpins.base === 0 && stage.intermissionSpins.withShoes === 0) return false;
+    return true;
+  }
+  // BATTLE: allow swap until the player commits to spin (G.currentBattle is cleared then)
+  if (G.phase === 'BATTLE' && G.currentBattle) return true;
+  return false;
 }
 
 function startBoxSwap(boxIdx) {
@@ -1432,6 +1440,7 @@ function completeBoxSwap(partyIdx) {
   log('\u{1F504}', `Swapped ${partyPoke.name} \u2194 ${boxPoke.name} (PC Box)`, 'log-info');
   G.swapPending = null;
   renderAll();
+  if (G.phase === 'BATTLE' && G.currentBattle) refreshBattleWheel();
 }
 
 function addToParty(pokemon, cb, next) {
@@ -1605,15 +1614,30 @@ function setupBattlePhase() {
     log('\u1F300', `Champion uses: ${stageTypes.join(' / ')}`, 'log-info');
   }
 
-  const battleParty = [...G.party];
   if (G.bonuses.bonusSlot) {
-    battleParty.push({ ...G.bonuses.bonusSlot, _isBonus: true });
     log('\u2B50', `Bonus slot active: ${G.bonuses.bonusSlot.name}`, 'log-item');
   }
 
+  G.currentBattle = { stage, stageTypes, activeBonuses, logged: false };
+  refreshBattleWheel();
+}
+
+function refreshBattleWheel() {
+  if (!G.currentBattle) return;
+  const { stage, stageTypes, activeBonuses } = G.currentBattle;
+
+  const battleParty = [...G.party];
+  if (G.bonuses.bonusSlot) battleParty.push({ ...G.bonuses.bonusSlot, _isBonus: true });
+
   const { chance, rawChance, pokemonContribSum, difficulty, jitter, breakdown } = computeWinChance(battleParty, stageTypes, activeBonuses, stage);
   renderBattleBreakdown(breakdown, chance, rawChance, difficulty, jitter, pokemonContribSum);
-  log('\u1F4CA', `Raw:${rawChance} (base:${DATA.balance.winModel.baseChance}+poke:${pokemonContribSum}) | Opp:-${difficulty} | Jitter:${jitter>=0?'+':''}${jitter} | Final:${chance}%`, 'log-info');
+
+  if (!G.currentBattle.logged) {
+    log('\u1F4CA', `Raw:${rawChance} (base:${DATA.balance.winModel.baseChance}+poke:${pokemonContribSum}) | Opp:-${difficulty} | Jitter:${jitter>=0?'+':''}${jitter} | Final:${chance}%`, 'log-info');
+    G.currentBattle.logged = true;
+  } else {
+    log('\u{1F501}', `Recalculated after swap: ${chance}% win chance`, 'log-info');
+  }
 
   const slices = [
     { label: 'WIN!',   weight: chance },
@@ -1626,6 +1650,7 @@ function setupBattlePhase() {
 
   setSpinHandler(() => {
     log('\u2694', `Battle vs ${stage.stageName} (${chance}% win)`, 'log-info');
+    G.currentBattle = null;
     spinWheel(slices, (idx, slice) => {
       G.bonuses.bonusSlot = null;
       G.bonuses.xAttackTarget = null;
@@ -2012,13 +2037,19 @@ function renderBattleBreakdown(breakdown, chance, rawChance, difficulty, jitter,
     if (row.kind === 'pokemon') {
       const multP = row.mult !== undefined ? ` \xd7${row.mult}` : '';
       const xaTag = row.xAttack ? ' <b style="color:#f4a">💪×2</b>' : '';
+      let effPart = '';
+      if (row.effDelta) {
+        const effC = row.effDelta > 0 ? 'var(--accent3)' : 'var(--accent2)';
+        const effS = row.effDelta > 0 ? '+' : '';
+        effPart = ` <small style="color:${effC}">${effS}${row.effDelta}%</small>`;
+      }
       const bstStr = row.bst ? ` BST\u00a0${row.bst}` : '';
       const cat = catLabel[row.category] || row.category;
       html += `<div class="contrib-row">
         <span><b style="color:var(--text)">${row.name}</b>
           <small style="display:block;color:var(--text2);line-height:1.3">${bstStr} \u2192 base\u00a0${row.baseContrib}%${multP} ${cat}</small>
         </span>
-        <span class="contrib-vs">+${row.value}%</span>
+        <span class="contrib-vs">+${row.value}%${effPart}</span>
       </div>`;
     } else {
       html += `<div class="contrib-row">
@@ -2095,6 +2126,37 @@ document.getElementById('darkModeToggle').addEventListener('click', () => {
   document.getElementById('darkModeToggle').textContent = next === 'dark' ? '\u263E' : '\u2600';
   if (wheelState.slices.length > 0) drawWheel(wheelState.slices, wheelState.angle);
 });
+
+// ── Easter Egg: 5 clicks at center of the wheel → 6 Mewtwo party + Mew in PC Box ─
+(function setupCenterEasterEgg() {
+  let clicks = 0;
+  let lastClick = 0;
+  const RADIUS_PX = 38;
+  const WINDOW_MS = 2500;
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const dx = (e.clientX - rect.left) - rect.width / 2;
+    const dy = (e.clientY - rect.top)  - rect.height / 2;
+    if (Math.hypot(dx, dy) > RADIUS_PX) { clicks = 0; return; }
+    const now = Date.now();
+    if (now - lastClick > WINDOW_MS) clicks = 0;
+    lastClick = now;
+    clicks++;
+    if (clicks >= 5) { clicks = 0; triggerMewtwoEasterEgg(); }
+  });
+})();
+
+function triggerMewtwoEasterEgg() {
+  if (!G || G.runEnded || G.phase === 'STARTER') return;
+  const mewtwo = DATA.dexMap[150];
+  const mew    = DATA.dexMap[151];
+  if (!mewtwo || !mew) return;
+  G.party = Array.from({ length: 6 }, () => ({ ...mewtwo }));
+  G.box.push({ ...mew });
+  log('\u{1F300}', 'EASTER EGG! Six Mewtwo replaced your party. A Mew waits in the PC Box.', 'log-crit');
+  renderAll();
+  if (G.phase === 'BATTLE' && G.currentBattle) refreshBattleWheel();
+}
 
 // ── Restart ────────────────────────────────────────────────────
 function doRestart() {

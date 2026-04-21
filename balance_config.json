@@ -51,6 +51,7 @@
       "Neutral": 5,
       "Resisted": 2
     },
+    "effectiveTypeBonus": 5,
     "clamp": [5, 95]
   }
 }

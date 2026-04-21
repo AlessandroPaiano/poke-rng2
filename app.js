@@ -445,6 +445,7 @@ const INLINE_BALANCE = {
       "Neutral": 5,
       "Resisted": 2
     },
+    "effectiveTypeBonus": 5,
     "clamp": [5, 95]
   }
 };
@@ -662,19 +663,24 @@ function getEffectiveness(attackType, defType) {
 function getPokemonMatchup(pokemon, stageTypes) {
   const pokemonTypes = [pokemon.type1, pokemon.type2].filter(Boolean);
   const filtered = stageTypes.filter(t => t !== 'Mixed');
-  let best = 0, superCount = 0;
+  const effBonus = DATA.balance.winModel.effectiveTypeBonus ?? 0;
+  let best = 0, superCount = 0, effDelta = 0;
   for (const pt of pokemonTypes) {
     for (const st of filtered) {
       const eff = getEffectiveness(pt, st);
       if (eff > best) best = eff;
-      if (eff >= 2) superCount++;
+      if (eff >= 2) { superCount++; effDelta += effBonus; }
+      else if (eff < 1) { effDelta -= effBonus; }
     }
   }
   const bal = DATA.balance.winModel.contributions;
-  if (superCount >= 2) return { category: 'VeryStrong', value: bal.VeryStrong };
-  if (best >= 2)       return { category: 'Strong',     value: bal.Strong };
-  if (best >= 1)       return { category: 'Neutral',    value: bal.Neutral };
-  return                      { category: 'Resisted',   value: bal.Resisted };
+  let result;
+  if (superCount >= 2) result = { category: 'VeryStrong', value: bal.VeryStrong };
+  else if (best >= 2)  result = { category: 'Strong',     value: bal.Strong };
+  else if (best >= 1)  result = { category: 'Neutral',    value: bal.Neutral };
+  else                 result = { category: 'Resisted',   value: bal.Resisted };
+  result.effDelta = effDelta;
+  return result;
 }
 
 function computeWinChance(party, stageTypes, bonuses = []) {
@@ -683,8 +689,8 @@ function computeWinChance(party, stageTypes, bonuses = []) {
   const breakdown = [];
   for (const p of party) {
     const m = getPokemonMatchup(p, stageTypes);
-    chance += m.value;
-    breakdown.push({ name: p.name, category: m.category, value: m.value, bonus: false });
+    chance += m.value + m.effDelta;
+    breakdown.push({ name: p.name, category: m.category, value: m.value, effDelta: m.effDelta, bonus: false });
   }
   for (const b of bonuses) {
     chance += b.value;
@@ -1375,7 +1381,13 @@ function renderBattleBreakdown(breakdown, chance) {
   const base = DATA.balance.winModel.baseChance;
   let html = `<div class="contrib-row"><span>Base</span><span class="contrib-vs">+${base}</span></div>`;
   for (const row of breakdown) {
-    html += `<div class="contrib-row"><span>${row.name} <small style="color:var(--text2)">(${row.category})</small></span><span class="${row.bonus ? 'contrib-bonus' : 'contrib-vs'}">+${row.value}</span></div>`;
+    let effPart = '';
+    if (row.effDelta) {
+      const color = row.effDelta > 0 ? 'var(--accent3)' : 'var(--accent2)';
+      const sign = row.effDelta > 0 ? '+' : '';
+      effPart = ` <small style="color:${color}">${sign}${row.effDelta}</small>`;
+    }
+    html += `<div class="contrib-row"><span>${row.name} <small style="color:var(--text2)">(${row.category})</small></span><span class="${row.bonus ? 'contrib-bonus' : 'contrib-vs'}">+${row.value}${effPart}</span></div>`;
   }
   html += `<div class="contrib-row" style="font-family:var(--pixel-font);font-size:0.4rem;border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span>Total</span><span>${chance}%</span></div>`;
   document.getElementById('battle-breakdown').innerHTML = html;
